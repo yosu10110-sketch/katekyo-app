@@ -130,7 +130,7 @@ export function Sidebar({ role, userId }: SidebarProps) {
   const filtered = navItems.filter((item) => item.roles.includes(role))
 
   return (
-    <aside className="w-60 shrink-0 bg-white border-r border-gray-200 flex flex-col h-full">
+    <aside className="hidden md:flex w-60 shrink-0 bg-white border-r border-gray-200 flex-col h-full">
       <div className="flex items-center gap-2.5 px-5 h-16 border-b border-gray-200">
         <div className="bg-indigo-600 p-1.5 rounded-lg">
           <BookOpen className="h-5 w-5 text-white" />

@@ -44,7 +44,7 @@ export function Header({ profile }: { profile: Profile }) {
     .slice(0, 2)
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0">
+    <header className="h-14 md:h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6 shrink-0">
       <h1 className="text-lg font-semibold text-gray-900">{title}</h1>
 
       <DropdownMenu>
