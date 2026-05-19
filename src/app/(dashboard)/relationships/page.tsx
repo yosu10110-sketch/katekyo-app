@@ -49,7 +49,7 @@ export default function RelationshipsPage() {
         : await addParentStudentRelationship(targetId)
 
       if ('error' in result) {
-        setMessage({ type: 'error', text: result.error })
+        setMessage({ type: 'error', text: result.error ?? 'エラーが発生しました' })
       } else {
         setMessage({ type: 'success', text: '追加しました' })
         setSearchResults([])
@@ -67,7 +67,7 @@ export default function RelationshipsPage() {
         : await removeParentStudentRelationship(targetId)
 
       if ('error' in result) {
-        setMessage({ type: 'error', text: result.error })
+        setMessage({ type: 'error', text: result.error ?? 'エラーが発生しました' })
       } else {
         setMessage({ type: 'success', text: '削除しました' })
         await loadRelationships()

@@ -23,7 +23,7 @@ export function TextbookManager({ textbooks: initial }: { textbooks: Textbook[] 
       setError(null)
       const result = await createTextbook(formData)
       if ('error' in result) {
-        setError(result.error)
+        setError(result.error ?? 'エラーが発生しました')
       } else {
         setOpen(false)
         // ページリロードでリストを更新

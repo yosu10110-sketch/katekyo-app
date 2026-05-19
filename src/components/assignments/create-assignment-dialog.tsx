@@ -61,7 +61,7 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
     const result = await createTextbook(fd)
     setAddingTextbook(false)
     if ('error' in result) {
-      setError(result.error)
+      setError(result.error ?? 'エラーが発生しました')
       return
     }
     // ローカルリストに追加して自動選択

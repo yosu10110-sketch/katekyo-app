@@ -31,7 +31,7 @@ export function RequestLectureDialog({ teacherId }: RequestLectureDialogProps) {
       formData.set('teacher_id', teacherId)
       const result = await createLectureRequest(formData)
       if ('error' in result) {
-        setError(result.error)
+        setError(result.error ?? 'エラーが発生しました')
       } else {
         setSuccess(true)
         setTimeout(() => handleClose(), 1500)
