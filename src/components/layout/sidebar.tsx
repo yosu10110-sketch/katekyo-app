@@ -14,8 +14,16 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
-import { ChatNotificationBadge } from '@/components/chat/chat-notification-badge'
-import { NavBadge } from '@/components/layout/nav-badge'
+import dynamic from 'next/dynamic'
+
+const ChatNotificationBadge = dynamic(
+  () => import('@/components/chat/chat-notification-badge').then(m => m.ChatNotificationBadge),
+  { ssr: false }
+)
+const NavBadge = dynamic(
+  () => import('@/components/layout/nav-badge').then(m => m.NavBadge),
+  { ssr: false }
+)
 
 interface NavItem {
   href: string
