@@ -1,10 +1,12 @@
 import type { Metadata } from 'next'
-import { Geist } from 'next/font/google'
+import { M_PLUS_Rounded_1c } from 'next/font/google'
 import './globals.css'
 
-const geist = Geist({
-  variable: '--font-geist',
+const font = M_PLUS_Rounded_1c({
+  weight: ['400', '500', '700', '800'],
   subsets: ['latin'],
+  variable: '--font-rounded',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -18,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ja" className={`${geist.variable} h-full`}>
-      <body className="h-full bg-gray-50 antialiased">{children}</body>
+    <html lang="ja" className={`${font.variable} h-full`}>
+      <body className={`${font.className} h-full bg-gray-50 antialiased`}>{children}</body>
     </html>
   )
 }
