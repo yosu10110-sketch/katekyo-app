@@ -103,7 +103,7 @@ export function LectureCalendar({ lectures, role, students }: LectureCalendarPro
       {/* 日付グリッド */}
       <div className="grid grid-cols-7 gap-px bg-gray-200 rounded-xl overflow-hidden border border-gray-200">
         {days.map((d, i) => {
-          if (!d) return <div key={`empty-${i}`} className="bg-gray-50 min-h-[60px] md:min-h-[80px]" />
+          if (!d) return <div key={`empty-${i}`} className="bg-gray-50 min-h-[80px] md:min-h-[120px]" />
           const key = dateKey(d)
           const dayLectures = lecturesByDate[key] ?? []
           const dow = (d.getDay() + 6) % 7 // 月曜=0
@@ -112,7 +112,7 @@ export function LectureCalendar({ lectures, role, students }: LectureCalendarPro
               key={key}
               onClick={() => setSelected(isSelected(d) ? null : d)}
               className={cn(
-                'bg-white min-h-[60px] md:min-h-[80px] p-1 text-left transition-colors hover:bg-indigo-50 flex flex-col',
+                'bg-white min-h-[80px] md:min-h-[120px] p-1.5 text-left transition-colors hover:bg-indigo-50 flex flex-col',
                 isSelected(d) && 'bg-indigo-50',
               )}
             >
@@ -126,13 +126,12 @@ export function LectureCalendar({ lectures, role, students }: LectureCalendarPro
                 {d.getDate()}
               </span>
               <div className="flex flex-col gap-0.5 w-full overflow-hidden">
-                {dayLectures.slice(0, 2).map((l) => (
+                {dayLectures.slice(0, 3).map((l) => (
                   <div
                     key={l.id}
                     className="text-[10px] bg-indigo-100 text-indigo-700 rounded px-1 truncate leading-4"
                   >
-                    {new Date(l.scheduled_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
-                    {role === 'teacher' && l.profiles ? ` ${l.profiles.full_name}` : ` ${l.title}`}
+                    {role === 'teacher' && l.profiles ? l.profiles.full_name : l.title}
                   </div>
                 ))}
                 {dayLectures.length > 2 && (
