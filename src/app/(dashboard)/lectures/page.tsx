@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { LectureDialog } from '@/components/lectures/lecture-dialog'
 import { RequestLectureDialog } from '@/components/lectures/request-lecture-dialog'
 import { ApproveRequestCard } from '@/components/lectures/approve-request-card'
+import { LectureCalendar } from '@/components/lectures/lecture-calendar'
 import { Calendar, Video, ClipboardCheck, CalendarX, CalendarClock } from 'lucide-react'
 import type { Profile, Lecture } from '@/types'
 
@@ -168,57 +169,53 @@ export default async function LecturesPage({
         </section>
       )}
 
-      {/* 講義一覧 */}
-      {upcoming.length === 0 && past.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <CalendarX className="h-12 w-12 text-gray-300 mb-4" />
-          <p className="text-gray-500 font-medium">講義の予定はありません</p>
-          <p className="text-gray-400 text-sm mt-1">
-            {role === 'teacher' ? '「講義を追加」から登録できます' : '「講義を申請する」から希望日時を送れます'}
-          </p>
-        </div>
-      ) : (
+      {/* 教師：カレンダー表示 */}
+      {role === 'teacher' && (
+        <LectureCalendar
+          lectures={(lectures ?? []) as (Lecture & { profiles?: { full_name: string } })[]}
+          role={role}
+          students={students}
+        />
+      )}
+
+      {/* 生徒・保護者：リスト表示 */}
+      {role !== 'teacher' && (
         <>
-          {upcoming.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
-                <Calendar className="h-4 w-4 text-green-500" />
-                今後の予定
-                <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">
-                  {upcoming.length}
-                </span>
-              </h2>
-              <div className="space-y-3">
-                {upcoming.map((lecture) => (
-                  <LectureCard
-                    key={lecture.id}
-                    lecture={lecture as Lecture & { profiles?: { full_name: string } }}
-                    role={role}
-                    students={students}
-                    isUpcoming
-                  />
-                ))}
-              </div>
-            </section>
-          )}
-          {past.length > 0 && (
-            <section>
-              <h2 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
-                過去の講義
-              </h2>
-              <div className="space-y-3 opacity-60">
-                {past.slice(0, 5).map((lecture) => (
-                  <LectureCard
-                    key={lecture.id}
-                    lecture={lecture as Lecture & { profiles?: { full_name: string } }}
-                    role={role}
-                    students={students}
-                    isUpcoming={false}
-                  />
-                ))}
-              </div>
-            </section>
+          {upcoming.length === 0 && past.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <CalendarX className="h-12 w-12 text-gray-300 mb-4" />
+              <p className="text-gray-500 font-medium">講義の予定はありません</p>
+              <p className="text-gray-400 text-sm mt-1">「講義を申請する」から希望日時を送れます</p>
+            </div>
+          ) : (
+            <>
+              {upcoming.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4 text-green-500" />
+                    今後の予定
+                    <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">{upcoming.length}</span>
+                  </h2>
+                  <div className="space-y-3">
+                    {upcoming.map((lecture) => (
+                      <LectureCard key={lecture.id} lecture={lecture as Lecture & { profiles?: { full_name: string } }} role={role} students={students} isUpcoming />
+                    ))}
+                  </div>
+                </section>
+              )}
+              {past.length > 0 && (
+                <section>
+                  <h2 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4" />過去の講義
+                  </h2>
+                  <div className="space-y-3 opacity-60">
+                    {past.slice(0, 5).map((lecture) => (
+                      <LectureCard key={lecture.id} lecture={lecture as Lecture & { profiles?: { full_name: string } }} role={role} students={students} isUpcoming={false} />
+                    ))}
+                  </div>
+                </section>
+              )}
+            </>
           )}
         </>
       )}
