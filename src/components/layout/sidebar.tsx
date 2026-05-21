@@ -33,10 +33,16 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // 教師：3項目のみ
+  // 教師
   {
     href: '/dashboard',
     label: '生徒一覧',
+    icon: Users,
+    roles: ['teacher'],
+  },
+  {
+    href: '/relationships',
+    label: 'メンバー管理',
     icon: Users,
     roles: ['teacher'],
   },
