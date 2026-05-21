@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
 
 export async function login(formData: FormData) {
   const supabase = await createClient()
@@ -39,6 +40,22 @@ export async function signup(formData: FormData) {
   }
 
   return { success: '確認メールを送信しました。メールをご確認ください。' }
+}
+
+export async function signInWithGoogle(role: string) {
+  const supabase = await createClient()
+  const headersList = await headers()
+  const origin = headersList.get('origin') ?? 'https://katekyo-app.vercel.app'
+
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: `${origin}/auth/callback?role=${role}&next=/dashboard`,
+    },
+  })
+
+  if (error) return { error: error.message }
+  if (data.url) redirect(data.url)
 }
 
 export async function logout() {
