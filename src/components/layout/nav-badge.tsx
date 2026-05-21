@@ -28,7 +28,8 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
       return
     }
 
-    const lastRead = localStorage.getItem(STORAGE_KEY(feature)) ?? '1970-01-01'
+    // デフォルトは現在時刻（初回ログイン時は既読扱い）
+    const lastRead = localStorage.getItem(STORAGE_KEY(feature)) ?? new Date().toISOString()
     let unsubscribe: (() => void) | null = null
 
     async function loadCount() {

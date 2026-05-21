@@ -31,7 +31,8 @@ export function ChatNotificationBadge({ userId }: { userId: string }) {
       // 各ルームの最終既読時刻をlocalStorageから取得
       let totalUnread = 0
       for (const roomId of roomIds) {
-        const lastRead = localStorage.getItem(`chat_last_read_${roomId}`) ?? '1970-01-01'
+        // デフォルトは現在時刻（初回ログイン時は既読扱い）
+        const lastRead = localStorage.getItem(`chat_last_read_${roomId}`) ?? new Date().toISOString()
         const { count: c } = await supabase
           .from('chat_messages')
           .select('*', { count: 'exact', head: true })

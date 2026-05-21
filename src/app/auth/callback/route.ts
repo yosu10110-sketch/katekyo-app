@@ -11,14 +11,24 @@ export async function GET(request: Request) {
     const supabase = await createClient()
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      // Google認証後、ロールが指定されていれば更新
+      // 新規ユーザーのみロールを設定（既存ユーザーは変更しない）
       if (role && ['teacher', 'student', 'parent'].includes(role)) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          await supabase
+          const { data: profile } = await supabase
             .from('profiles')
-            .update({ role: role as 'teacher' | 'student' | 'parent' })
+            .select('role, created_at')
             .eq('id', user.id)
+            .single()
+          // 作成から1分以内 = 新規ユーザー
+          const isNewUser = profile &&
+            (new Date().getTime() - new Date(profile.created_at).getTime()) < 60 * 1000
+          if (isNewUser) {
+            await supabase
+              .from('profiles')
+              .update({ role: role as 'teacher' | 'student' | 'parent' })
+              .eq('id', user.id)
+          }
         }
       }
       return NextResponse.redirect(`${origin}${next}`)
