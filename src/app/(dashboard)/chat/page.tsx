@@ -125,9 +125,8 @@ export default async function ChatPage({
     if (activeRoomId) {
       activeRoom = (rooms ?? []).find((r) => r.id === activeRoomId) as ChatRoom ?? null
     }
-    if (!activeRoom && contacts.length > 0 && contacts[0].room) {
-      activeRoom = contacts[0].room
-    }
+    // デスクトップのみ自動選択（モバイルはURL指定時のみ）
+    // activeRoomIdが指定されていない場合はnullのまま
   } else {
     // 生徒・保護者：既存ルームのみ表示
     const roomsQuery = role === 'student'
@@ -152,9 +151,7 @@ export default async function ChatPage({
     if (activeRoomId) {
       activeRoom = (rooms ?? []).find((r) => r.id === activeRoomId) as ChatRoom ?? null
     }
-    if (!activeRoom && contacts.length > 0) {
-      activeRoom = contacts[0].room
-    }
+    // activeRoomIdが指定されていない場合はnullのまま
   }
 
   // アクティブルームのメッセージ
@@ -168,34 +165,43 @@ export default async function ChatPage({
   }
 
   const activeContact = contacts.find((c) => c.room?.id === activeRoom?.id)
+  const showRoom = !!activeRoomId && !!activeRoom
+
+  const contactListData = contacts.map((c) => ({
+    id: c.id,
+    name: c.name,
+    type: c.type,
+    roomId: c.room?.id ?? null,
+    latestMessage: c.latestMessage,
+    latestAt: c.latestAt,
+  }))
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] rounded-xl border border-gray-200 overflow-hidden bg-white">
+    <div className="flex h-[calc(100vh-7rem)] md:rounded-xl md:border md:border-gray-200 overflow-hidden bg-white">
 
-      {/* 連絡先リスト */}
-      <div className="w-72 shrink-0 border-r border-gray-100 flex flex-col">
+      {/* 連絡先リスト：モバイルはroomが選択されていない時のみ表示 */}
+      <div className={`${showRoom ? 'hidden md:flex' : 'flex'} w-full md:w-72 shrink-0 border-r border-gray-100 flex-col`}>
         <div className="px-4 py-3 border-b border-gray-100">
           <p className="text-sm font-semibold text-gray-700">メッセージ</p>
         </div>
         <ChatContactList
-          contacts={contacts.map((c) => ({
-            id: c.id,
-            name: c.name,
-            type: c.type,
-            roomId: c.room?.id ?? null,
-            latestMessage: c.latestMessage,
-            latestAt: c.latestAt,
-          }))}
+          contacts={contactListData}
           activeRoomId={activeRoom?.id ?? null}
           currentUserId={user.id}
         />
       </div>
 
-      {/* チャットエリア */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* チャットエリア：モバイルはroomが選択された時のみ表示 */}
+      <div className={`${showRoom ? 'flex' : 'hidden md:flex'} flex-1 flex-col overflow-hidden`}>
         {activeRoom && activeContact ? (
           <>
             <div className="h-12 border-b border-gray-100 flex items-center px-4 gap-3 shrink-0">
+              {/* モバイル：戻るボタン */}
+              <a href="/chat" className="md:hidden text-gray-500 hover:text-gray-700 shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                </svg>
+              </a>
               <div className={`h-7 w-7 rounded-full flex items-center justify-center text-white text-xs font-semibold ${
                 activeContact.type === 'teacher_student' ? 'bg-indigo-400' : 'bg-amber-400'
               }`}>
