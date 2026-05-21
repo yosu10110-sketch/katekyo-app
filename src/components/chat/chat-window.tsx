@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { sendMessage } from '@/app/actions/chat'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
@@ -65,8 +65,11 @@ export function ChatWindow({ roomId, initialMessages, currentUserId }: ChatWindo
     setSending(false)
   }
 
+  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // PCのみEnterで送信、モバイルは送信ボタンのみ
+    if (!isMobile && e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
     }
@@ -126,7 +129,7 @@ export function ChatWindow({ roomId, initialMessages, currentUserId }: ChatWindo
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="メッセージを入力（Enterで送信、Shift+Enterで改行）"
+          placeholder={isMobile ? "メッセージを入力" : "メッセージを入力（Enterで送信）"}
           rows={1}
           className="flex-1 resize-none rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-300 max-h-32 overflow-y-auto"
           style={{ height: 'auto' }}
