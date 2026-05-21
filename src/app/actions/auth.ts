@@ -42,7 +42,7 @@ export async function signup(formData: FormData) {
   return { success: '確認メールを送信しました。メールをご確認ください。' }
 }
 
-export async function signInWithGoogle(role: string) {
+export async function signInWithGoogle() {
   const supabase = await createClient()
   const headersList = await headers()
   const origin = headersList.get('origin') ?? 'https://katekyo-app.vercel.app'
@@ -50,7 +50,7 @@ export async function signInWithGoogle(role: string) {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${origin}/auth/callback?role=${role}&next=/dashboard`,
+      redirectTo: `${origin}/auth/callback`,
     },
   })
 
