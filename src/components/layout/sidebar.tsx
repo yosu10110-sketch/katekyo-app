@@ -41,12 +41,6 @@ const navItems: NavItem[] = [
     roles: ['teacher'],
   },
   {
-    href: '/relationships',
-    label: 'メンバー管理',
-    icon: Users,
-    roles: ['teacher'],
-  },
-  {
     href: '/lectures',
     label: '次回講義',
     icon: Calendar,

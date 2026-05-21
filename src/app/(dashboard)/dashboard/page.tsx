@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { ClipboardList, Calendar, ChevronRight, Users, MessageSquare, BarChart3 } from 'lucide-react'
 import Link from 'next/link'
 import type { Profile } from '@/types'
+import { AddStudentDialog } from '@/components/dashboard/add-student-dialog'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -42,9 +43,12 @@ export default async function DashboardPage() {
 
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-xl font-bold text-gray-900">担当生徒</h2>
-          <p className="text-gray-500 text-sm mt-1">生徒を選んで管理を始めましょう</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">担当生徒</h2>
+            <p className="text-gray-500 text-sm mt-1">生徒を選んで管理を始めましょう</p>
+          </div>
+          <AddStudentDialog onAdded={() => {}} />
         </div>
 
         {students.length === 0 ? (
