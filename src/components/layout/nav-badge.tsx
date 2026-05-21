@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePathname } from 'next/navigation'
 
@@ -18,6 +18,7 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
   const [count, setCount] = useState(0)
   const pathname = usePathname()
   const supabase = createClient()
+  const channelId = useRef(`nav_badge_${feature}_${userId}_${Math.random().toString(36).slice(2)}`).current
 
   useEffect(() => {
     // 該当ページを開いている間はバッジリセット
@@ -70,7 +71,7 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
         }
 
         // リアルタイム
-        const ch = supabase.channel(`badge_assignments_${userId}`)
+        const ch = supabase.channel(channelId)
           .on('postgres_changes', { event: 'INSERT', schema: 'public',
             table: role === 'teacher' ? 'assignment_submissions' : 'assignments' },
             () => setCount(p => p + 1))
@@ -90,7 +91,7 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
           .neq('author_id', userId)
         total = (postCount ?? 0) + (replyCount ?? 0)
 
-        const ch = supabase.channel(`badge_noticeboard_${userId}`)
+        const ch = supabase.channel(channelId)
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notice_board_posts' },
             () => setCount(p => p + 1))
           .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notice_board_replies' },
@@ -112,7 +113,7 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
             .gt('created_at', lastRead)
           total = c ?? 0
 
-          const ch = supabase.channel(`badge_lectures_${userId}`)
+          const ch = supabase.channel(channelId)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lecture_requests' },
               () => setCount(p => p + 1))
             .subscribe()
@@ -126,7 +127,7 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
             .gt('created_at', lastRead)
           total = c ?? 0
 
-          const ch = supabase.channel(`badge_lectures_student_${userId}`)
+          const ch = supabase.channel(channelId)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lectures' },
               (payload) => {
                 const l = payload.new as { student_id: string }

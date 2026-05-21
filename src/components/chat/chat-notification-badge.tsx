@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePathname } from 'next/navigation'
 
@@ -8,6 +8,7 @@ export function ChatNotificationBadge({ userId }: { userId: string }) {
   const [count, setCount] = useState(0)
   const pathname = usePathname()
   const supabase = createClient()
+  const channelId = useRef(`sidebar_badge_${userId}_${Math.random().toString(36).slice(2)}`).current
 
   useEffect(() => {
     // チャットページを開いている間はバッジをリセット
@@ -46,7 +47,7 @@ export function ChatNotificationBadge({ userId }: { userId: string }) {
 
     // リアルタイムで新着追加
     const channel = supabase
-      .channel('sidebar_badge')
+      .channel(channelId)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chat_messages' },
