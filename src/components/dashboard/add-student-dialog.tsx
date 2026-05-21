@@ -1,13 +1,15 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { UserPlus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { searchProfiles, addTeacherStudentRelationship } from '@/app/actions/relationships'
 
-export function AddStudentDialog({ onAdded }: { onAdded: () => void }) {
+export function AddStudentDialog() {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const [searchName, setSearchName] = useState('')
   const [results, setResults] = useState<{ id: string; full_name: string }[]>([])
@@ -30,7 +32,7 @@ export function AddStudentDialog({ onAdded }: { onAdded: () => void }) {
         setMessage({ type: 'success', text: `${name} さんを追加しました` })
         setResults([])
         setSearchName('')
-        onAdded()
+        router.refresh()
       }
     })
   }

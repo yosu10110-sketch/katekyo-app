@@ -48,7 +48,7 @@ export default async function DashboardPage() {
             <h2 className="text-xl font-bold text-gray-900">担当生徒</h2>
             <p className="text-gray-500 text-sm mt-1">生徒を選んで管理を始めましょう</p>
           </div>
-          <AddStudentDialog onAdded={() => {}} />
+          <AddStudentDialog />
         </div>
 
         {students.length === 0 ? (
