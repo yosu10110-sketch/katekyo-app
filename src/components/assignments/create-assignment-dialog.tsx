@@ -58,6 +58,8 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
     fd.set('subject', newSubject)
     fd.set('title', newTitle)
     fd.set('publisher', newPublisher)
+    // 生徒が確定している場合はその生徒に紐付ける
+    if (preSelectedStudent) fd.set('student_id', preSelectedStudent.id)
     const result = await createTextbook(fd)
     setAddingTextbook(false)
     if ('error' in result) {

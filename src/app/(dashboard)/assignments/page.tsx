@@ -91,19 +91,22 @@ export default async function AssignmentsPage({
   let students: Profile[] = []
   let textbooks: Textbook[] = []
   if (role === 'teacher') {
-    const [relsRes, textbooksRes] = await Promise.all([
-      supabase
-        .from('teacher_student_relationships')
-        .select('profiles!teacher_student_relationships_student_id_fkey(*)')
-        .eq('teacher_id', user.id),
-      supabase
+    const relsRes = await supabase
+      .from('teacher_student_relationships')
+      .select('profiles!teacher_student_relationships_student_id_fkey(*)')
+      .eq('teacher_id', user.id)
+    students = relsRes.data?.map((r) => r.profiles as unknown as Profile).filter(Boolean) ?? []
+
+    // 生徒が絞られている場合はその生徒の参考書のみ取得
+    if (studentFilter) {
+      const { data: tb } = await supabase
         .from('textbooks')
         .select('*')
         .eq('teacher_id', user.id)
-        .order('subject'),
-    ])
-    students = relsRes.data?.map((r) => r.profiles as unknown as Profile).filter(Boolean) ?? []
-    textbooks = (textbooksRes.data ?? []) as Textbook[]
+        .eq('student_id', studentFilter)
+        .order('subject')
+      textbooks = (tb ?? []) as Textbook[]
+    }
   }
 
   const preSelectedStudent = studentFilter
