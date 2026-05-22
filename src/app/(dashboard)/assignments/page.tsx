@@ -30,6 +30,19 @@ function formatDueDate(due: string | null) {
   return { label, urgent: false, text: `残り${days}日` }
 }
 
+// 提出済み・FB済み用：期限切れ表示なし（提出日を表示）
+function formatDueDateNoOverdue(due: string | null) {
+  if (!due) return null
+  const date = new Date(due)
+  const now = new Date()
+  const diff = date.getTime() - now.getTime()
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24))
+  const label = date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  if (days >= 0 && days <= 2) return { label, urgent: false, text: `期限: ${label}` }
+  if (days < 0) return { label, urgent: false, text: `期限: ${label}` }
+  return { label, urgent: false, text: `期限: ${label}` }
+}
+
 export default async function AssignmentsPage({
   searchParams,
 }: {
@@ -48,7 +61,7 @@ export default async function AssignmentsPage({
   // 課題一覧を取得（ロール別）
   let assignmentsQuery = supabase
     .from('assignments')
-    .select('*, profiles!assignments_student_id_fkey(full_name)')
+    .select('*, profiles!assignments_student_id_fkey(full_name), assignment_submissions(submitted_at)')
     .order('created_at', { ascending: false })
 
   if (role === 'teacher') {
@@ -198,7 +211,8 @@ function AssignmentList({ assignments, role }: { assignments: Assignment[]; role
     <div className="space-y-2">
       {assignments.map((assignment) => {
         const status = statusConfig[assignment.status]
-        const due = formatDueDate(assignment.due_date)
+        const due = assignment.status === 'pending' ? formatDueDate(assignment.due_date) : null
+        const submittedAt = (assignment as any).assignment_submissions?.[0]?.submitted_at
         const studentName = (assignment as Assignment & { profiles?: { full_name: string } }).profiles?.full_name
 
         return (
@@ -222,6 +236,11 @@ function AssignmentList({ assignments, role }: { assignments: Assignment[]; role
                       {due && (
                         <span className={`text-xs ${due.urgent ? 'text-red-600 font-medium' : 'text-gray-400'}`}>
                           {due.label}（{due.text}）
+                        </span>
+                      )}
+                      {submittedAt && assignment.status !== 'pending' && (
+                        <span className="text-xs text-gray-400">
+                          {new Date(submittedAt).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })} 提出
                         </span>
                       )}
                     </div>
