@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { BookOpen, GraduationCap, Users, Heart } from 'lucide-react'
+import { GRADES } from '@/types'
 
 const ROLES = [
   {
@@ -34,20 +35,26 @@ const ROLES = [
 
 export default function OnboardingPage() {
   const [selected, setSelected] = useState<string | null>(null)
+  const [grade, setGrade] = useState<string>('')
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
+  const canSubmit = selected && (selected !== 'student' || grade)
+
   async function handleSubmit() {
-    if (!selected) return
+    if (!canSubmit) return
     startTransition(async () => {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
+      const updates: { role: string; grade?: string } = { role: selected! }
+      if (selected === 'student' && grade) updates.grade = grade
+
       const { error } = await supabase
         .from('profiles')
-        .update({ role: selected })
+        .update(updates)
         .eq('id', user.id)
 
       if (error) { setError('エラーが発生しました'); return }
@@ -86,13 +93,30 @@ export default function OnboardingPage() {
             )
           })}
 
+          {/* 生徒の場合：学年選択 */}
+          {selected === 'student' && (
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-700">学年を選択してください</label>
+              <select
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
+                className="w-full rounded-xl border-2 border-green-200 bg-green-50 px-3 py-2.5 text-sm focus:outline-none focus:border-green-500"
+              >
+                <option value="">学年を選択...</option>
+                {GRADES.map((g) => (
+                  <option key={g} value={g}>{g}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {error && (
             <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">{error}</p>
           )}
 
           <button
             onClick={handleSubmit}
-            disabled={!selected || isPending}
+            disabled={!canSubmit || isPending}
             className="w-full h-12 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 text-white font-semibold rounded-xl transition-colors mt-2"
           >
             {isPending ? '設定中...' : 'はじめる'}

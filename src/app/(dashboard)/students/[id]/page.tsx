@@ -10,6 +10,7 @@ import {
 import type { Profile } from '@/types'
 import { getGamificationSetting, getStudentStreak } from '@/app/actions/gamification'
 import { GamificationToggle } from '@/components/gamification/gamification-toggle'
+import { GradeSelector } from '@/components/students/grade-selector'
 
 export default async function StudentHubPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: studentId } = await params
@@ -98,6 +99,9 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">{(student as Profile).full_name}</h2>
+            {(student as Profile).grade && (
+              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full mr-2">{(student as Profile).grade}</span>
+            )}
             <div className="flex gap-2 mt-1">
               {submittedCount > 0 && (
                 <Badge className="bg-amber-100 text-amber-700 text-xs">採点待ち {submittedCount}件</Badge>
@@ -120,6 +124,9 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       )}
+
+      {/* 学年設定 */}
+      <GradeSelector studentId={studentId} initialGrade={(student as Profile).grade} />
 
       {/* ゲーミフィケーション切り替え */}
       <GamificationToggle studentId={studentId} initialEnabled={gamificationEnabled} />

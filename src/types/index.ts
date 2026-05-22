@@ -7,15 +7,25 @@ export interface Profile {
   role: UserRole
   full_name: string
   avatar_url: string | null
+  grade: string | null
   created_at: string
 }
+
+export const GRADES = [
+  '小学1年', '小学2年', '小学3年', '小学4年', '小学5年', '小学6年',
+  '中学1年', '中学2年', '中学3年',
+  '高校1年', '高校2年', '高校3年',
+  'その他',
+]
 
 export interface Textbook {
   id: string
   teacher_id: string
+  student_id: string | null
   subject: string
   title: string
   publisher: string | null
+  grade: string | null
   created_at: string
 }
 
