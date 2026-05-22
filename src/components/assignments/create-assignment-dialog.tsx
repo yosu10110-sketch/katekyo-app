@@ -71,9 +71,11 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
     const added: Textbook = {
       id: tempId,
       teacher_id: '',
+      student_id: preSelectedStudent?.id ?? null,
       subject: newSubject,
       title: newTitle,
       publisher: newPublisher || null,
+      grade: null,
       created_at: new Date().toISOString(),
     }
     setTextbooks((prev) => [...prev, added])
