@@ -62,7 +62,8 @@ export function ChatNotificationBadge({ userId }: { userId: string }) {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [userId, pathname, supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, pathname])
 
   if (count === 0) return null
 

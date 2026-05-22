@@ -174,7 +174,6 @@ export default async function LecturesPage({
         <LectureCalendar
           lectures={(lectures ?? []) as (Lecture & { profiles?: { full_name: string } })[]}
           role={role}
-          students={students}
         />
       )}
 

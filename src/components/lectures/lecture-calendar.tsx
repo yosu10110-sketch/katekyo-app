@@ -10,12 +10,11 @@ type LectureWithProfile = Lecture & { profiles?: { full_name: string } }
 interface LectureCalendarProps {
   lectures: LectureWithProfile[]
   role: string
-  students: Profile[]
 }
 
 const WEEKDAYS = ['月', '火', '水', '木', '金', '土', '日']
 
-export function LectureCalendar({ lectures, role, students }: LectureCalendarProps) {
+export function LectureCalendar({ lectures, role }: LectureCalendarProps) {
   const today = new Date()
   const [current, setCurrent] = useState({ year: today.getFullYear(), month: today.getMonth() })
   const [selected, setSelected] = useState<Date | null>(null)

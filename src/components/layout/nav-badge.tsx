@@ -144,7 +144,8 @@ export function NavBadge({ userId, role, feature }: NavBadgeProps) {
 
     loadCount()
     return () => { unsubscribe?.() }
-  }, [userId, role, feature, pathname, supabase])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userId, role, feature, pathname])
 
   if (count === 0) return null
 

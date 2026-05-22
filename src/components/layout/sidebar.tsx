@@ -7,7 +7,6 @@ import {
   ClipboardList,
   Calendar,
   MessageSquare,
-  BarChart3,
   MessageCircle,
   LayoutDashboard,
   Users,
