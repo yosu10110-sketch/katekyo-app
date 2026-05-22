@@ -113,12 +113,6 @@ const navItems: NavItem[] = [
     icon: MessageCircle,
     roles: ['parent'],
   },
-  {
-    href: '/relationships',
-    label: 'メンバー管理',
-    icon: Users,
-    roles: ['student', 'parent'],
-  },
 ]
 
 interface SidebarProps {

@@ -82,8 +82,8 @@ export function ChatContactList({ contacts: initial, activeRoomId, currentUserId
       {contacts.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full text-center px-4">
           <MessageCircle className="h-10 w-10 text-gray-200 mb-3" />
-          <p className="text-sm text-gray-400">連絡先がありません</p>
-          <p className="text-xs text-gray-300 mt-1">メンバー管理から生徒を追加してください</p>
+          <p className="text-sm text-gray-400">チャットはまだありません</p>
+          <p className="text-xs text-gray-300 mt-1">教師がチャットを開始するとここに表示されます</p>
         </div>
       ) : (
         contacts.map((contact) => {
