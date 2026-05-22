@@ -6,6 +6,10 @@ import { Card, CardContent } from '@/components/ui/card'
 import { CreateAssignmentDialog } from '@/components/assignments/create-assignment-dialog'
 import { ClipboardList, ChevronRight, Clock, CheckCircle2, Circle } from 'lucide-react'
 import type { Profile, Assignment, Textbook } from '@/types'
+import { WeeklyCalendar } from '@/components/assignments/weekly-calendar'
+import { StreakDisplay } from '@/components/gamification/streak-display'
+import { BadgeCollection } from '@/components/gamification/badge-collection'
+import { getStudentStreak, getStudentBadges, getGamificationSetting, checkAndAwardBadges } from '@/app/actions/gamification'
 
 const statusConfig = {
   pending: { label: '未提出', icon: Circle, className: 'bg-gray-100 text-gray-600' },
@@ -67,6 +71,22 @@ export default async function AssignmentsPage({
 
   const { data: assignments } = await assignmentsQuery
 
+  // 生徒の場合：ゲーミフィケーション情報を取得
+  let streak = { current: 0, longest: 0 }
+  let badges: any[] = []
+  let gamificationEnabled = true
+  if (role === 'student') {
+    await checkAndAwardBadges(user.id)
+    const [s, b, g] = await Promise.all([
+      getStudentStreak(user.id),
+      getStudentBadges(user.id),
+      getGamificationSetting(user.id),
+    ])
+    streak = s
+    badges = b
+    gamificationEnabled = g
+  }
+
   // 教師の場合：担当生徒・参考書一覧も取得（課題作成用）
   let students: Profile[] = []
   let textbooks: Textbook[] = []
@@ -89,6 +109,21 @@ export default async function AssignmentsPage({
   const preSelectedStudent = studentFilter
     ? students.find((s) => s.id === studentFilter)
     : undefined
+
+  // 生徒：週間カレンダー表示
+  if (role === 'student') {
+    return (
+      <div className="space-y-6 max-w-2xl">
+        {gamificationEnabled && (
+          <>
+            <StreakDisplay current={streak.current} longest={streak.longest} />
+            <BadgeCollection earnedBadges={badges} />
+          </>
+        )}
+        <WeeklyCalendar assignments={(assignments ?? []) as Assignment[]} />
+      </div>
+    )
+  }
 
   if (!assignments || assignments.length === 0) {
     return <EmptyState role={role} students={students} textbooks={textbooks} preSelectedStudent={preSelectedStudent} />

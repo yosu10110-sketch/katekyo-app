@@ -8,6 +8,8 @@ import {
   MessageSquare, ChevronRight, ChevronLeft, Clock, CheckCircle2, Circle,
 } from 'lucide-react'
 import type { Profile } from '@/types'
+import { getGamificationSetting, getStudentStreak } from '@/app/actions/gamification'
+import { GamificationToggle } from '@/components/gamification/gamification-toggle'
 
 export default async function StudentHubPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: studentId } = await params
@@ -59,6 +61,12 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
     .eq('student_id', studentId)
     .eq('status', 'submitted')).count ?? 0
 
+  // ゲーミフィケーション設定・ストリーク
+  const [gamificationEnabled, streak] = await Promise.all([
+    getGamificationSetting(studentId),
+    getStudentStreak(studentId),
+  ])
+
   // 次回講義
   const { data: lectures } = await supabase
     .from('lectures')
@@ -101,6 +109,20 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
           </div>
         </div>
       </div>
+
+      {/* ストリーク表示 */}
+      {streak.current > 0 && (
+        <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-2.5">
+          <span className="text-2xl">🔥</span>
+          <div>
+            <span className="font-bold text-orange-600">{streak.current}日連続</span>
+            <span className="text-xs text-orange-400 ml-1">期限前提出中</span>
+          </div>
+        </div>
+      )}
+
+      {/* ゲーミフィケーション切り替え */}
+      <GamificationToggle studentId={studentId} initialEnabled={gamificationEnabled} />
 
       {/* 機能ナビ */}
       <div className="grid grid-cols-2 gap-3">

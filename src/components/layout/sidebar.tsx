@@ -58,16 +58,10 @@ const navItems: NavItem[] = [
     icon: MessageCircle,
     roles: ['teacher'],
   },
-  // 生徒
-  {
-    href: '/dashboard',
-    label: 'ダッシュボード',
-    icon: LayoutDashboard,
-    roles: ['student'],
-  },
+  // 生徒（4項目のみ）
   {
     href: '/assignments',
-    label: '課題管理',
+    label: '課題',
     icon: ClipboardList,
     roles: ['student'],
   },
@@ -78,15 +72,15 @@ const navItems: NavItem[] = [
     roles: ['student'],
   },
   {
-    href: '/curriculum',
-    label: '教材進捗',
-    icon: BarChart3,
-    roles: ['student'],
-  },
-  {
     href: '/chat',
     label: 'チャット',
     icon: MessageCircle,
+    roles: ['student'],
+  },
+  {
+    href: '/notice-board',
+    label: '連絡板',
+    icon: MessageSquare,
     roles: ['student'],
   },
   // 保護者
