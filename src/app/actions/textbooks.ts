@@ -46,6 +46,7 @@ export async function createTextbook(formData: FormData) {
     subject: formData.get('subject') as string,
     title: formData.get('title') as string,
     publisher: (formData.get('publisher') as string) || null,
+    grade: (formData.get('grade') as string) || null,
   })
 
   if (error) return { error: error.message }

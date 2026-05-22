@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, BookMarked, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Profile, Textbook } from '@/types'
+import { GRADES } from '@/types'
 
 const SUBJECTS = ['国語', '数学', '英語', '理科', '社会', '物理', '化学', '生物', '地理', '歴史', 'その他']
 
@@ -33,6 +34,7 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
   const [newSubject, setNewSubject] = useState('')
   const [newTitle, setNewTitle] = useState('')
   const [newPublisher, setNewPublisher] = useState('')
+  const [newGrade, setNewGrade] = useState('')
   const [addingTextbook, setAddingTextbook] = useState(false)
 
   const selectedTextbook = textbooks.find((t) => t.id === selectedTextbookId)
@@ -58,6 +60,7 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
     fd.set('subject', newSubject)
     fd.set('title', newTitle)
     fd.set('publisher', newPublisher)
+    if (newGrade) fd.set('grade', newGrade)
     // 生徒が確定している場合はその生徒に紐付ける
     if (preSelectedStudent) fd.set('student_id', preSelectedStudent.id)
     const result = await createTextbook(fd)
@@ -75,7 +78,7 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
       subject: newSubject,
       title: newTitle,
       publisher: newPublisher || null,
-      grade: null,
+      grade: newGrade || null,
       created_at: new Date().toISOString(),
     }
     setTextbooks((prev) => [...prev, added])
@@ -179,6 +182,14 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
                     placeholder="出版社（任意）"
                     className="bg-white"
                   />
+                  <select
+                    value={newGrade}
+                    onChange={(e) => setNewGrade(e.target.value)}
+                    className="w-full rounded-md border border-input bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    <option value="">学年（任意）</option>
+                    {GRADES.map((g) => <option key={g} value={g}>{g}</option>)}
+                  </select>
                   <Button
                     type="button"
                     size="sm"
