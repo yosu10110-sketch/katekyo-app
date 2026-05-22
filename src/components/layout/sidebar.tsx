@@ -82,13 +82,6 @@ const navItems: NavItem[] = [
     icon: MessageSquare,
     roles: ['student'],
   },
-  // 全ロール共通
-  {
-    href: '/profile',
-    label: 'プロフィール',
-    icon: Users,
-    roles: ['teacher', 'student', 'parent'],
-  },
   // 保護者
   {
     href: '/dashboard',

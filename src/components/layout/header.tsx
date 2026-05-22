@@ -12,7 +12,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { LogOut } from 'lucide-react'
+import { LogOut, UserCircle } from 'lucide-react'
+import Link from 'next/link'
 import type { Profile } from '@/types'
 
 const pageTitles: Record<string, string> = {
@@ -66,6 +67,13 @@ export function Header({ profile }: { profile: Profile }) {
               {profile.full_name}
             </DropdownMenuLabel>
           </DropdownMenuGroup>
+          <DropdownMenuSeparator />
+          <Link href="/profile">
+            <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
+              <UserCircle className="h-4 w-4" />
+              プロフィール編集
+            </DropdownMenuItem>
+          </Link>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             onClick={() => logout()}
