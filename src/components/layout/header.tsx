@@ -51,12 +51,13 @@ export function Header({ profile }: { profile: Profile }) {
         <DropdownMenuTrigger
           className="flex items-center gap-2.5 hover:bg-gray-100 rounded-lg px-2 py-1.5 transition-colors focus:outline-none"
         >
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={profile.avatar_url ?? undefined} />
-            <AvatarFallback className="bg-indigo-100 text-indigo-700 text-xs font-semibold">
+          {profile.avatar_url ? (
+            <img src={profile.avatar_url} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
+          ) : (
+            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 text-xs font-semibold">
               {initials}
-            </AvatarFallback>
-          </Avatar>
+            </div>
+          )}
           <p className="text-sm font-medium text-gray-900 hidden sm:block">{profile.full_name}</p>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-52">
