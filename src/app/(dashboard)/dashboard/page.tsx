@@ -3,7 +3,7 @@ import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { ClipboardList, Calendar, ChevronRight, Users, MessageSquare, BarChart3 } from 'lucide-react'
+import { ClipboardList, Calendar, ChevronRight, Users, MessageSquare, BarChart3, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import type { Profile } from '@/types'
 import { AddStudentDialog } from '@/components/dashboard/add-student-dialog'
@@ -95,6 +95,43 @@ export default async function DashboardPage() {
         )}
       </div>
     )
+  }
+
+  // ========== 保護者：生徒未連携チェック ==========
+  if (role === 'parent') {
+    const { data: rels } = await supabase
+      .from('parent_student_relationships')
+      .select('student_id, profiles!parent_student_relationships_student_id_fkey(full_name)')
+      .eq('parent_id', user.id)
+
+    if (!rels || rels.length === 0) {
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-bold text-gray-900">
+              おかえりなさい、{profile.full_name} さん
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">まずお子さんのアカウントと連携しましょう</p>
+          </div>
+          <Link href="/relationships">
+            <Card className="border-2 border-dashed border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50/30 transition-colors cursor-pointer">
+              <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+                <div className="p-3 bg-indigo-100 rounded-full">
+                  <UserPlus className="h-7 w-7 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="font-semibold text-gray-900">お子さんを登録する</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    生徒アカウントと紐付けると、講義予定・宿題・月謝を確認できます
+                  </p>
+                </div>
+                <span className="text-sm text-indigo-600 font-medium">設定する →</span>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+      )
+    }
   }
 
   // ========== 生徒・保護者：ダッシュボード ==========

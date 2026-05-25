@@ -97,6 +97,12 @@ const navItems: NavItem[] = [
     roles: ['parent'],
   },
   {
+    href: '/relationships',
+    label: 'お子さん管理',
+    icon: Users,
+    roles: ['parent'],
+  },
+  {
     href: '/assignments',
     label: '課題確認',
     icon: ClipboardList,
