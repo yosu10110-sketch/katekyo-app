@@ -41,7 +41,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     if (error) { alert('アップロードに失敗しました'); setUploading(false); return }
 
     const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
-    setAvatarUrl(publicUrl)
+    setAvatarUrl(`${publicUrl}?t=${Date.now()}`)
     setUploading(false)
   }
 
