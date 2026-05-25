@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { approveLectureRequest, rejectLectureRequest, formatLectureRequest } from '@/app/actions/lecture-requests'
+import { approveLectureRequest, rejectLectureRequest } from '@/app/actions/lecture-requests'
+import { formatLectureRequest } from '@/lib/lecture-utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'

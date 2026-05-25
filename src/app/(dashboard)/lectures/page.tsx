@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUser, getProfile } from '@/lib/supabase/cached'
-import { formatLectureRequest } from '@/app/actions/lecture-requests'
+import { formatLectureRequest } from '@/lib/lecture-utils'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
