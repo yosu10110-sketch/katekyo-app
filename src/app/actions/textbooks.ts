@@ -40,18 +40,18 @@ export async function createTextbook(formData: FormData) {
 
   const studentId = formData.get('student_id') as string | null
 
-  const { error } = await supabase.from('textbooks').insert({
+  const { data, error } = await supabase.from('textbooks').insert({
     teacher_id: user.id,
     student_id: studentId || null,
     subject: formData.get('subject') as string,
     title: formData.get('title') as string,
     publisher: (formData.get('publisher') as string) || null,
     grade: (formData.get('grade') as string) || null,
-  })
+  }).select().single()
 
   if (error) return { error: error.message }
   revalidatePath('/textbooks')
-  return { success: true }
+  return { success: true, textbook: data }
 }
 
 export async function deleteTextbook(id: string) {

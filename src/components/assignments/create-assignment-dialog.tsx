@@ -69,20 +69,10 @@ export function CreateAssignmentDialog({ students, textbooks: initialTextbooks, 
       setError(result.error ?? 'エラーが発生しました')
       return
     }
-    // ローカルリストに追加して自動選択
-    const tempId = crypto.randomUUID()
-    const added: Textbook = {
-      id: tempId,
-      teacher_id: '',
-      student_id: preSelectedStudent?.id ?? null,
-      subject: newSubject,
-      title: newTitle,
-      publisher: newPublisher || null,
-      grade: newGrade || null,
-      created_at: new Date().toISOString(),
-    }
+    // DBから返ってきた実際のIDでローカルリストに追加して自動選択
+    const added: Textbook = result.textbook as Textbook
     setTextbooks((prev) => [...prev, added])
-    setSelectedTextbookId(tempId)
+    setSelectedTextbookId(added.id)
     setShowAddTextbook(false)
     setNewSubject('')
     setNewTitle('')
