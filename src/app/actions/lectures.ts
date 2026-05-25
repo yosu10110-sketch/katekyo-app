@@ -8,11 +8,13 @@ export async function createLecture(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: '認証が必要です' }
 
+  const scheduledEndAtRaw = formData.get('scheduled_end_at') as string
   const { error } = await supabase.from('lectures').insert({
     teacher_id: user.id,
     student_id: formData.get('student_id') as string,
     title: formData.get('title') as string,
     scheduled_at: new Date(formData.get('scheduled_at') as string).toISOString(),
+    scheduled_end_at: scheduledEndAtRaw ? new Date(scheduledEndAtRaw).toISOString() : null,
     meeting_url: (formData.get('meeting_url') as string) || null,
     preparation_notes: (formData.get('preparation_notes') as string) || null,
   })
@@ -30,11 +32,13 @@ export async function updateLecture(formData: FormData) {
 
   const lectureId = formData.get('lecture_id') as string
 
+  const scheduledEndAtRaw = formData.get('scheduled_end_at') as string
   const { error } = await supabase
     .from('lectures')
     .update({
       title: formData.get('title') as string,
       scheduled_at: new Date(formData.get('scheduled_at') as string).toISOString(),
+      scheduled_end_at: scheduledEndAtRaw ? new Date(scheduledEndAtRaw).toISOString() : null,
       meeting_url: (formData.get('meeting_url') as string) || null,
       preparation_notes: (formData.get('preparation_notes') as string) || null,
     })

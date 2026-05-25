@@ -97,14 +97,28 @@ export function LectureDialog({ students, lecture }: LectureDialogProps) {
             </div>
 
             <div className="space-y-1">
-              <Label htmlFor="scheduled_at">日時</Label>
-              <Input
-                id="scheduled_at"
-                name="scheduled_at"
-                type="datetime-local"
-                defaultValue={lecture ? toLocalDatetimeValue(lecture.scheduled_at) : ''}
-                required
-              />
+              <Label>日時</Label>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 space-y-1">
+                  <p className="text-xs text-gray-500">開始</p>
+                  <Input
+                    id="scheduled_at"
+                    name="scheduled_at"
+                    type="datetime-local"
+                    defaultValue={lecture ? toLocalDatetimeValue(lecture.scheduled_at) : ''}
+                    required
+                  />
+                </div>
+                <div className="flex-1 space-y-1">
+                  <p className="text-xs text-gray-500">終了（任意）</p>
+                  <Input
+                    id="scheduled_end_at"
+                    name="scheduled_end_at"
+                    type="datetime-local"
+                    defaultValue={lecture?.scheduled_end_at ? toLocalDatetimeValue(lecture.scheduled_end_at) : ''}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="space-y-1">
