@@ -44,7 +44,12 @@ export async function createLectureRequest(formData: FormData) {
   return { success: true }
 }
 
-export async function approveLectureRequest(requestId: string, meetingUrl?: string) {
+export async function approveLectureRequest(
+  requestId: string,
+  meetingUrl?: string,
+  scheduledStartTime?: string,
+  scheduledEndTime?: string,
+) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: '認証が必要です' }
@@ -58,11 +63,22 @@ export async function approveLectureRequest(requestId: string, meetingUrl?: stri
 
   if (!req) return { error: 'リクエストが見つかりません' }
 
+  // timerange/alldayの場合、教師が指定した時刻でscheduled_atを上書き
+  let scheduledAt = req.desired_at
+  let scheduledEndAt: string | null = null
+  if (scheduledStartTime && req.desired_date) {
+    scheduledAt = new Date(`${req.desired_date}T${scheduledStartTime}:00`).toISOString()
+  }
+  if (scheduledEndTime && req.desired_date) {
+    scheduledEndAt = new Date(`${req.desired_date}T${scheduledEndTime}:00`).toISOString()
+  }
+
   const { error: lectureError } = await supabase.from('lectures').insert({
     teacher_id: user.id,
     student_id: req.student_id,
     title: '講義',
-    scheduled_at: req.desired_at,
+    scheduled_at: scheduledAt,
+    scheduled_end_at: scheduledEndAt,
     meeting_url: meetingUrl || null,
     preparation_notes: req.notes || null,
   })

@@ -64,6 +64,7 @@ export interface Lecture {
   student_id: string
   title: string
   scheduled_at: string
+  scheduled_end_at: string | null
   meeting_url: string | null
   preparation_notes: string | null
   created_at: string

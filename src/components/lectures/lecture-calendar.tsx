@@ -161,6 +161,12 @@ export function LectureCalendar({ lectures, role }: LectureCalendarProps) {
                     <p className="font-medium text-gray-900 text-sm">{l.title}</p>
                     <span className="text-xs text-gray-500">
                       {new Date(l.scheduled_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                      {l.scheduled_end_at && (
+                        <>
+                          {' 〜 '}
+                          {new Date(l.scheduled_end_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                        </>
+                      )}
                     </span>
                   </div>
                   {role === 'teacher' && l.profiles && (

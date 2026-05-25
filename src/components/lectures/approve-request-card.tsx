@@ -28,12 +28,24 @@ const typeConfig = {
 
 export function ApproveRequestCard({ request }: { request: Request }) {
   const [meetingUrl, setMeetingUrl] = useState('')
+  const [lectureStartTime, setLectureStartTime] = useState('')
+  const [lectureEndTime, setLectureEndTime] = useState('')
   const [isPending, startTransition] = useTransition()
   const [done, setDone] = useState<'approved' | 'rejected' | null>(null)
 
+  const type = (request.request_type || 'datetime') as keyof typeof typeConfig
+  const config = typeConfig[type] ?? typeConfig.datetime
+  const timeDisplay = formatLectureRequest(request)
+  const needsTimeInput = type === 'timerange' || type === 'allday'
+
   function handleApprove() {
     startTransition(async () => {
-      await approveLectureRequest(request.id, meetingUrl || undefined)
+      await approveLectureRequest(
+        request.id,
+        meetingUrl || undefined,
+        needsTimeInput && lectureStartTime ? lectureStartTime : undefined,
+        needsTimeInput && lectureEndTime ? lectureEndTime : undefined,
+      )
       setDone('approved')
     })
   }
@@ -63,10 +75,6 @@ export function ApproveRequestCard({ request }: { request: Request }) {
     )
   }
 
-  const type = (request.request_type || 'datetime') as keyof typeof typeConfig
-  const config = typeConfig[type] ?? typeConfig.datetime
-  const timeDisplay = formatLectureRequest(request)
-
   return (
     <Card className="border-amber-200 bg-amber-50/40">
       <CardHeader className="pb-2">
@@ -83,6 +91,28 @@ export function ApproveRequestCard({ request }: { request: Request }) {
         {request.notes && (
           <div className="text-sm text-gray-600 bg-white border border-amber-200 rounded-md p-2">
             {request.notes}
+          </div>
+        )}
+        {needsTimeInput && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-600">講義の実施時間を設定</p>
+            <div className="flex items-center gap-2">
+              <Input
+                type="time"
+                value={lectureStartTime}
+                onChange={(e) => setLectureStartTime(e.target.value)}
+                placeholder="開始時刻"
+                className="bg-white flex-1"
+              />
+              <span className="text-gray-500 text-sm shrink-0">〜</span>
+              <Input
+                type="time"
+                value={lectureEndTime}
+                onChange={(e) => setLectureEndTime(e.target.value)}
+                placeholder="終了時刻"
+                className="bg-white flex-1"
+              />
+            </div>
           </div>
         )}
         <Input

@@ -248,7 +248,15 @@ function LectureCard({
       <CardContent className="space-y-3">
         <div className="flex items-center gap-2 text-sm text-gray-700">
           <Calendar className="h-4 w-4 text-green-500 shrink-0" />
-          <span>{formatDate(lecture.scheduled_at)}</span>
+          <span>
+            {formatDate(lecture.scheduled_at)}
+            {lecture.scheduled_end_at && (
+              <span className="text-gray-500">
+                {' 〜 '}
+                {new Date(lecture.scheduled_end_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
+          </span>
         </div>
         {lecture.meeting_url && (
           <a
