@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useTransition } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { updateProfile } from '@/app/actions/profile'
 import { Button } from '@/components/ui/button'
@@ -17,6 +18,7 @@ interface ProfileEditorProps {
 }
 
 export function ProfileEditor({ profile }: ProfileEditorProps) {
+  const router = useRouter()
   const [avatarUrl, setAvatarUrl] = useState(profile.avatar_url ?? '')
   const [uploading, setUploading] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -57,7 +59,7 @@ export function ProfileEditor({ profile }: ProfileEditorProps) {
     startTransition(async () => {
       await updateProfile(formData)
       setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
+      setTimeout(() => router.back(), 800)
     })
   }
 
