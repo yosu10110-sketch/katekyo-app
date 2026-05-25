@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Header } from '@/components/layout/header'
 import { MobileBottomNav } from '@/components/layout/mobile-bottom-nav'
@@ -10,29 +10,22 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
+  const profile = await getProfile(user.id)
   if (!profile) redirect('/login')
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      <Sidebar role={(profile as Profile).role} userId={user.id} />
+    <div className="flex h-dvh overflow-hidden">
+      <Sidebar role={profile.role} userId={user.id} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header profile={profile as Profile} />
+        <Header profile={profile} />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 pb-20 md:pb-6">
           {children}
         </main>
       </div>
-      <MobileBottomNav role={(profile as Profile).role} userId={user.id} />
+      <MobileBottomNav role={profile.role} userId={user.id} />
     </div>
   )
 }

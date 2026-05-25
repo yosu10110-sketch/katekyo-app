@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
 import { CreatePostDialog } from '@/components/notice-board/create-post-dialog'
 import { PostCard } from '@/components/notice-board/post-card'
@@ -11,14 +12,14 @@ type PostWithRelations = NoticeBoardPost & {
 }
 
 export default async function NoticeBoardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
+  const profile = await getProfile(user.id)
   if (!profile) redirect('/login')
-  const { role } = profile as Profile
+  const { role } = profile
+
+  const supabase = await createClient()
 
   // 担当生徒を取得
   let studentIds: string[] = []

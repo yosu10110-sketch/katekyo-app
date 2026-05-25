@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
 import { ChatWindow } from '@/components/chat/chat-window'
 import { ChatContactList } from '@/components/chat/chat-contact-list'
@@ -20,14 +21,14 @@ export default async function ChatPage({
   searchParams: Promise<{ room?: string; student?: string }>
 }) {
   const { room: activeRoomId } = await searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
+  const profile = await getProfile(user.id)
   if (!profile) redirect('/login')
-  const { role } = profile as Profile
+  const { role } = profile
+
+  const supabase = await createClient()
 
   // ========== 教師：全連絡先（生徒＋保護者）を取得 ==========
   let contacts: Contact[] = []
@@ -177,7 +178,7 @@ export default async function ChatPage({
   }))
 
   return (
-    <div className="flex h-[calc(100vh-7rem)] md:rounded-xl md:border md:border-gray-200 overflow-hidden bg-white">
+    <div className="flex h-[calc(100dvh-7rem)] md:rounded-xl md:border md:border-gray-200 overflow-hidden bg-white">
 
       {/* 連絡先リスト：モバイルはroomが選択されていない時のみ表示 */}
       <div className={`${showRoom ? 'hidden md:flex' : 'flex'} w-full md:w-72 shrink-0 border-r border-gray-100 flex-col`}>

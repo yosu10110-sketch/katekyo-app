@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
 import { MaterialCard } from '@/components/curriculum/material-card'
 import { CreateMaterialDialog } from '@/components/curriculum/create-material-dialog'
@@ -11,14 +12,14 @@ type MaterialWithUnits = CurriculumMaterial & {
 }
 
 export default async function CurriculumPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
+  const profile = await getProfile(user.id)
   if (!profile) redirect('/login')
-  const { role } = profile as Profile
+  const { role } = profile
+
+  const supabase = await createClient()
 
   let students: Profile[] = []
   let materialsQuery = supabase

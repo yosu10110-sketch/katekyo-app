@@ -1,4 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
+import { formatLectureRequest } from '@/app/actions/lecture-requests'
 import { redirect } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -26,14 +28,14 @@ export default async function LecturesPage({
   searchParams: Promise<{ student?: string }>
 }) {
   const { student: studentFilter } = await searchParams
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
+  const profile = await getProfile(user.id)
   if (!profile) redirect('/login')
-  const { role } = profile as Profile
+  const { role } = profile
+
+  const supabase = await createClient()
 
   // 講義一覧取得
   let lecturesQuery = supabase
@@ -151,10 +153,7 @@ export default async function LecturesPage({
                   <CardContent className="flex items-center justify-between py-3 px-4">
                     <div>
                       <p className="text-sm font-medium text-gray-900">
-                        {new Date(req.desired_at).toLocaleDateString('ja-JP', {
-                          month: 'long', day: 'numeric', weekday: 'short',
-                          hour: '2-digit', minute: '2-digit',
-                        })}
+                        {formatLectureRequest(req)}
                       </p>
                       {req.notes && (
                         <p className="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{req.notes}</p>

@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect, notFound } from 'next/navigation'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,70 +15,75 @@ import { GradeSelector } from '@/components/students/grade-selector'
 
 export default async function StudentHubPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: studentId } = await params
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  // 教師であることを確認
-  const { data: myProfile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+  const myProfile = await getProfile(user.id)
   if (!myProfile || myProfile.role !== 'teacher') redirect('/dashboard')
 
-  // 担当生徒か確認
-  const { data: rel } = await supabase
-    .from('teacher_student_relationships')
-    .select('student_id')
-    .eq('teacher_id', user.id)
-    .eq('student_id', studentId)
-    .single()
-  if (!rel) notFound()
+  const supabase = await createClient()
 
-  // 生徒プロフィール取得
-  const { data: student } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', studentId)
-    .single()
-  if (!student) notFound()
-
-  // 課題サマリ
-  const { data: assignments } = await supabase
-    .from('assignments')
-    .select('id, title, status, due_date')
-    .eq('teacher_id', user.id)
-    .eq('student_id', studentId)
-    .order('created_at', { ascending: false })
-    .limit(3)
-
-  const pendingCount = (await supabase
-    .from('assignments')
-    .select('*', { count: 'exact', head: true })
-    .eq('teacher_id', user.id)
-    .eq('student_id', studentId)
-    .eq('status', 'pending')).count ?? 0
-
-  const submittedCount = (await supabase
-    .from('assignments')
-    .select('*', { count: 'exact', head: true })
-    .eq('teacher_id', user.id)
-    .eq('student_id', studentId)
-    .eq('status', 'submitted')).count ?? 0
-
-  // ゲーミフィケーション設定・ストリーク
-  const [gamificationEnabled, streak] = await Promise.all([
+  // 関係確認・生徒データ・課題・ゲーミフィケーション・次回講義を並列取得
+  const [
+    relResult,
+    studentResult,
+    assignmentsResult,
+    pendingResult,
+    submittedResult,
+    gamificationEnabled,
+    streak,
+    lectureResult,
+  ] = await Promise.all([
+    supabase
+      .from('teacher_student_relationships')
+      .select('student_id')
+      .eq('teacher_id', user.id)
+      .eq('student_id', studentId)
+      .single(),
+    supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', studentId)
+      .single(),
+    supabase
+      .from('assignments')
+      .select('id, title, status, due_date')
+      .eq('teacher_id', user.id)
+      .eq('student_id', studentId)
+      .order('created_at', { ascending: false })
+      .limit(3),
+    supabase
+      .from('assignments')
+      .select('*', { count: 'exact', head: true })
+      .eq('teacher_id', user.id)
+      .eq('student_id', studentId)
+      .eq('status', 'pending'),
+    supabase
+      .from('assignments')
+      .select('*', { count: 'exact', head: true })
+      .eq('teacher_id', user.id)
+      .eq('student_id', studentId)
+      .eq('status', 'submitted'),
     getGamificationSetting(studentId),
     getStudentStreak(studentId),
+    supabase
+      .from('lectures')
+      .select('*')
+      .eq('teacher_id', user.id)
+      .eq('student_id', studentId)
+      .gte('scheduled_at', new Date().toISOString())
+      .order('scheduled_at')
+      .limit(1),
   ])
 
-  // 次回講義
-  const { data: lectures } = await supabase
-    .from('lectures')
-    .select('*')
-    .eq('teacher_id', user.id)
-    .eq('student_id', studentId)
-    .gte('scheduled_at', new Date().toISOString())
-    .order('scheduled_at')
-    .limit(1)
-  const nextLecture = lectures?.[0]
+  if (!relResult.data) notFound()
+  const student = studentResult.data
+  if (!student) notFound()
+
+  const assignments = assignmentsResult.data
+  const pendingCount = pendingResult.count ?? 0
+  const submittedCount = submittedResult.count ?? 0
+  const nextLecture = lectureResult.data?.[0]
 
   const statusConfig = {
     pending: { label: '未提出', icon: Circle, color: 'text-gray-400' },

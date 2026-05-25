@@ -1,22 +1,19 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
 import { TextbookManager } from '@/components/textbooks/textbook-manager'
-import type { Profile, Textbook } from '@/types'
+import type { Textbook } from '@/types'
 
 export default async function TextbooksPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', user.id)
-    .single()
-
-  if (!profile || (profile as Profile).role !== 'teacher') {
+  const profile = await getProfile(user.id)
+  if (!profile || profile.role !== 'teacher') {
     redirect('/dashboard')
   }
+
+  const supabase = await createClient()
 
   const { data: textbooks } = await supabase
     .from('textbooks')

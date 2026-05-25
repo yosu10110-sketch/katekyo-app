@@ -1,17 +1,28 @@
 'use client'
 
 import { useState, useTransition } from 'react'
-import { approveLectureRequest, rejectLectureRequest } from '@/app/actions/lecture-requests'
+import { approveLectureRequest, rejectLectureRequest, formatLectureRequest } from '@/app/actions/lecture-requests'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Check, X, CalendarClock } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Check, X, CalendarClock, Clock, CalendarDays } from 'lucide-react'
 
 interface Request {
   id: string
   desired_at: string
+  request_type?: string | null
+  desired_date?: string | null
+  start_time?: string | null
+  end_time?: string | null
   notes: string | null
   profiles: { full_name: string } | null
+}
+
+const typeConfig = {
+  datetime: { label: '日時指定', icon: Clock, color: 'bg-indigo-100 text-indigo-700' },
+  timerange: { label: '時間帯指定', icon: CalendarClock, color: 'bg-green-100 text-green-700' },
+  allday: { label: '終日', icon: CalendarDays, color: 'bg-amber-100 text-amber-700' },
 }
 
 export function ApproveRequestCard({ request }: { request: Request }) {
@@ -51,6 +62,10 @@ export function ApproveRequestCard({ request }: { request: Request }) {
     )
   }
 
+  const type = (request.request_type || 'datetime') as keyof typeof typeConfig
+  const config = typeConfig[type] ?? typeConfig.datetime
+  const timeDisplay = formatLectureRequest(request)
+
   return (
     <Card className="border-amber-200 bg-amber-50/40">
       <CardHeader className="pb-2">
@@ -60,12 +75,9 @@ export function ApproveRequestCard({ request }: { request: Request }) {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        <div className="text-sm text-gray-700">
-          <span className="font-medium">希望日時：</span>
-          {new Date(request.desired_at).toLocaleDateString('ja-JP', {
-            year: 'numeric', month: 'long', day: 'numeric',
-            weekday: 'short', hour: '2-digit', minute: '2-digit',
-          })}
+        <div className="flex items-start gap-2">
+          <Badge className={`text-xs shrink-0 ${config.color}`}>{config.label}</Badge>
+          <p className="text-sm text-gray-700 font-medium">{timeDisplay}</p>
         </div>
         {request.notes && (
           <div className="text-sm text-gray-600 bg-white border border-amber-200 rounded-md p-2">

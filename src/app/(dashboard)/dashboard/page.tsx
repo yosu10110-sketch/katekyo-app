@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -8,14 +9,14 @@ import type { Profile } from '@/types'
 import { AddStudentDialog } from '@/components/dashboard/add-student-dialog'
 
 export default async function DashboardPage() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
+  const user = await getUser()
   if (!user) redirect('/login')
 
-  const { data: profile } = await supabase
-    .from('profiles').select('*').eq('id', user.id).single()
+  const profile = await getProfile(user.id)
   if (!profile) redirect('/login')
-  const { role } = profile as Profile
+  const { role } = profile
+
+  const supabase = await createClient()
 
   // ========== 教師：生徒一覧を表示 ==========
   if (role === 'teacher') {
@@ -26,7 +27,6 @@ export default async function DashboardPage() {
 
     const students = rels?.map((r) => r.profiles as unknown as Profile).filter(Boolean) ?? []
 
-    // 各生徒の未提出課題数を取得
     const studentIds = students.map((s) => s.id)
     const pendingMap: Record<string, number> = {}
     if (studentIds.length > 0) {
@@ -97,27 +97,28 @@ export default async function DashboardPage() {
     )
   }
 
-  // ========== 生徒・保護者：既存のダッシュボード ==========
+  // ========== 生徒・保護者：ダッシュボード ==========
   let pendingAssignments = 0
+  let lecture: { title: string } | undefined
+
   if (role === 'student') {
-    const { count } = await supabase
-      .from('assignments')
-      .select('*', { count: 'exact', head: true })
-      .eq('student_id', user.id)
-      .eq('status', 'pending')
-    pendingAssignments = count ?? 0
+    const [pendingResult, lectureResult] = await Promise.all([
+      supabase
+        .from('assignments')
+        .select('*', { count: 'exact', head: true })
+        .eq('student_id', user.id)
+        .eq('status', 'pending'),
+      supabase
+        .from('lectures')
+        .select('*')
+        .eq('student_id', user.id)
+        .gte('scheduled_at', new Date().toISOString())
+        .order('scheduled_at')
+        .limit(1),
+    ])
+    pendingAssignments = pendingResult.count ?? 0
+    lecture = lectureResult.data?.[0]
   }
-
-  const lectureQuery = role === 'student'
-    ? supabase.from('lectures').select('*').eq('student_id', user.id).gte('scheduled_at', new Date().toISOString()).order('scheduled_at').limit(1)
-    : supabase.from('lectures').select('lectures(*)').eq('student_id',
-        (await supabase.from('parent_student_relationships').select('student_id').eq('parent_id', user.id).limit(1)).data?.[0]?.student_id ?? ''
-      ).gte('scheduled_at', new Date().toISOString()).order('scheduled_at').limit(1)
-
-  const { data: nextLecture } = role === 'student'
-    ? await supabase.from('lectures').select('*').eq('student_id', user.id).gte('scheduled_at', new Date().toISOString()).order('scheduled_at').limit(1)
-    : { data: [] }
-  const lecture = nextLecture?.[0]
 
   return (
     <div className="space-y-6">
