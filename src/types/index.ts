@@ -1,6 +1,7 @@
 export type UserRole = 'teacher' | 'student' | 'parent'
 export type AssignmentStatus = 'pending' | 'submitted' | 'reviewed'
 export type ChatRoomType = 'teacher_student' | 'teacher_parent'
+export type LectureStatus = 'scheduled' | 'completed' | 'cancelled'
 
 export interface Profile {
   id: string
@@ -65,6 +66,11 @@ export interface Lecture {
   title: string
   scheduled_at: string
   scheduled_end_at: string | null
+  status: LectureStatus
+  teacher_comment: string | null
+  homework: string | null
+  fee: number | null
+  duration_minutes: number | null
   meeting_url: string | null
   preparation_notes: string | null
   created_at: string

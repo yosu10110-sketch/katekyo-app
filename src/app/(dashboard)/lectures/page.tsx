@@ -8,7 +8,11 @@ import { LectureDialog } from '@/components/lectures/lecture-dialog'
 import { RequestLectureDialog } from '@/components/lectures/request-lecture-dialog'
 import { ApproveRequestCard } from '@/components/lectures/approve-request-card'
 import { LectureCalendar } from '@/components/lectures/lecture-calendar'
-import { Calendar, Video, ClipboardCheck, CalendarX, CalendarClock } from 'lucide-react'
+import { CompleteSessionButton } from '@/components/lectures/complete-session-dialog'
+import {
+  Calendar, Video, ClipboardCheck, CalendarX, CalendarClock,
+  CheckCircle2, MessageSquare, BookOpen, Clock,
+} from 'lucide-react'
 import type { Profile, Lecture } from '@/types'
 
 function formatDate(iso: string) {
@@ -102,8 +106,21 @@ export default async function LecturesPage({
     myRequests = reqRes.data ?? []
   }
 
-  const upcoming = lectures?.filter((l) => isUpcoming(l.scheduled_at)) ?? []
-  const past = lectures?.filter((l) => !isUpcoming(l.scheduled_at)) ?? []
+  const allLectures = (lectures ?? []) as (Lecture & { profiles?: { full_name: string } })[]
+
+  // 教師用：ステータス別に分類
+  const scheduledLectures = allLectures.filter(
+    (l) => !l.status || l.status === 'scheduled',
+  )
+  const completedLectures = [...allLectures.filter((l) => l.status === 'completed')].sort(
+    (a, b) => new Date(b.scheduled_at).getTime() - new Date(a.scheduled_at).getTime(),
+  )
+
+  // 生徒・保護者用
+  const upcoming = allLectures.filter(
+    (l) => isUpcoming(l.scheduled_at) && l.status !== 'cancelled' && l.status !== 'completed',
+  )
+  const past = allLectures.filter((l) => !upcoming.find((u) => u.id === l.id))
 
   const statusMap = {
     pending: { label: '承認待ち', className: 'bg-amber-100 text-amber-700' },
@@ -168,12 +185,55 @@ export default async function LecturesPage({
         </section>
       )}
 
-      {/* 教師：カレンダー表示 */}
+      {/* 教師：カレンダー + リスト表示 */}
       {role === 'teacher' && (
-        <LectureCalendar
-          lectures={(lectures ?? []) as (Lecture & { profiles?: { full_name: string } })[]}
-          role={role}
-        />
+        <>
+          <LectureCalendar
+            lectures={allLectures}
+            role={role}
+          />
+
+          {/* 予定中の授業 */}
+          {scheduledLectures.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
+                <Calendar className="h-4 w-4 text-indigo-500" />
+                予定中の授業
+                <span className="bg-indigo-100 text-indigo-700 text-xs px-1.5 py-0.5 rounded-full">
+                  {scheduledLectures.length}
+                </span>
+              </h2>
+              <div className="space-y-3">
+                {scheduledLectures.map((lecture) => (
+                  <TeacherLectureCard key={lecture.id} lecture={lecture} students={students} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* 完了した授業 */}
+          {completedLectures.length > 0 && (
+            <section>
+              <h2 className="text-sm font-semibold text-gray-500 mb-3 flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4 text-green-500" />
+                完了した授業
+              </h2>
+              <div className="space-y-3">
+                {completedLectures.slice(0, 10).map((lecture) => (
+                  <TeacherLectureCard key={lecture.id} lecture={lecture} students={students} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {allLectures.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <CalendarX className="h-12 w-12 text-gray-300 mb-4" />
+              <p className="text-gray-500 font-medium">講義の予定はありません</p>
+              <p className="text-gray-400 text-sm mt-1">「講義を追加」から次回の授業を登録しましょう</p>
+            </div>
+          )}
+        </>
       )}
 
       {/* 生徒・保護者：リスト表示 */}
@@ -192,11 +252,19 @@ export default async function LecturesPage({
                   <h2 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-1.5">
                     <Calendar className="h-4 w-4 text-green-500" />
                     今後の予定
-                    <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">{upcoming.length}</span>
+                    <span className="bg-green-100 text-green-700 text-xs px-1.5 py-0.5 rounded-full">
+                      {upcoming.length}
+                    </span>
                   </h2>
                   <div className="space-y-3">
                     {upcoming.map((lecture) => (
-                      <LectureCard key={lecture.id} lecture={lecture as Lecture & { profiles?: { full_name: string } }} role={role} students={students} isUpcoming />
+                      <LectureCard
+                        key={lecture.id}
+                        lecture={lecture}
+                        role={role}
+                        students={students}
+                        isUpcoming
+                      />
                     ))}
                   </div>
                 </section>
@@ -206,9 +274,15 @@ export default async function LecturesPage({
                   <h2 className="text-sm font-semibold text-gray-400 mb-3 flex items-center gap-1.5">
                     <Calendar className="h-4 w-4" />過去の講義
                   </h2>
-                  <div className="space-y-3 opacity-60">
-                    {past.slice(0, 5).map((lecture) => (
-                      <LectureCard key={lecture.id} lecture={lecture as Lecture & { profiles?: { full_name: string } }} role={role} students={students} isUpcoming={false} />
+                  <div className="space-y-3">
+                    {past.slice(0, 10).map((lecture) => (
+                      <LectureCard
+                        key={lecture.id}
+                        lecture={lecture}
+                        role={role}
+                        students={students}
+                        isUpcoming={false}
+                      />
                     ))}
                   </div>
                 </section>
@@ -221,6 +295,117 @@ export default async function LecturesPage({
   )
 }
 
+// 教師用カード（完了ボタン付き）
+function TeacherLectureCard({
+  lecture,
+  students,
+}: {
+  lecture: Lecture & { profiles?: { full_name: string } }
+  students: Profile[]
+}) {
+  const isScheduled = !lecture.status || lecture.status === 'scheduled'
+  const isCompleted = lecture.status === 'completed'
+  const isCancelled = lecture.status === 'cancelled'
+
+  return (
+    <Card
+      className={
+        isCompleted
+          ? 'border-green-200 bg-green-50/20'
+          : isCancelled
+          ? 'opacity-50 border-gray-200'
+          : ''
+      }
+    >
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CardTitle className="text-base">{lecture.title}</CardTitle>
+              {isCompleted && (
+                <Badge className="bg-green-100 text-green-700 text-xs shrink-0">完了</Badge>
+              )}
+              {isCancelled && (
+                <Badge className="bg-gray-100 text-gray-500 text-xs shrink-0">キャンセル</Badge>
+              )}
+            </div>
+            {lecture.profiles && (
+              <p className="text-xs text-gray-500 mt-0.5">{lecture.profiles.full_name}</p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {isScheduled && <CompleteSessionButton lecture={lecture} />}
+            <LectureDialog students={students} lecture={lecture} />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2 pt-0">
+        <div className="flex items-center gap-2 text-sm text-gray-700">
+          <Calendar className="h-3.5 w-3.5 text-green-500 shrink-0" />
+          <span>
+            {formatDate(lecture.scheduled_at)}
+            {lecture.scheduled_end_at && (
+              <span className="text-gray-400">
+                {' 〜 '}
+                {new Date(lecture.scheduled_end_at).toLocaleTimeString('ja-JP', {
+                  hour: '2-digit', minute: '2-digit',
+                })}
+              </span>
+            )}
+          </span>
+        </div>
+        {lecture.meeting_url && (
+          <a
+            href={lecture.meeting_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-800 w-fit"
+          >
+            <Video className="h-3.5 w-3.5 shrink-0" />
+            <span className="underline underline-offset-2">Zoomで参加する</span>
+          </a>
+        )}
+        {isCompleted && (
+          <div className="space-y-2 pt-1">
+            {lecture.teacher_comment && (
+              <div className="bg-blue-50 border border-blue-100 rounded-md p-2.5">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <MessageSquare className="h-3 w-3 text-blue-500" />
+                  <p className="text-xs font-semibold text-blue-700">保護者コメント</p>
+                </div>
+                <p className="text-sm text-blue-800">{lecture.teacher_comment}</p>
+              </div>
+            )}
+            {lecture.homework && (
+              <div className="bg-amber-50 border border-amber-100 rounded-md p-2.5">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <BookOpen className="h-3 w-3 text-amber-600" />
+                  <p className="text-xs font-semibold text-amber-700">宿題</p>
+                </div>
+                <p className="text-sm text-amber-800">{lecture.homework}</p>
+              </div>
+            )}
+            <div className="flex items-center gap-4 text-xs text-gray-500 pt-0.5">
+              {lecture.duration_minutes && (
+                <span className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  {lecture.duration_minutes}分
+                </span>
+              )}
+              {lecture.fee != null && (
+                <span className="font-semibold text-indigo-700">
+                  ¥{lecture.fee.toLocaleString()}
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// 生徒・保護者用カード
 function LectureCard({
   lecture, role, students, isUpcoming,
 }: {
@@ -229,19 +414,34 @@ function LectureCard({
   students: Profile[]
   isUpcoming: boolean
 }) {
+  const isCompleted = lecture.status === 'completed'
+  const isCancelled = lecture.status === 'cancelled'
+
   return (
-    <Card className={isUpcoming ? 'border-green-200 bg-green-50/30' : ''}>
+    <Card
+      className={
+        isUpcoming
+          ? 'border-green-200 bg-green-50/30'
+          : isCancelled
+          ? 'opacity-40'
+          : ''
+      }
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-3">
-          <div className="flex-1">
-            <CardTitle className="text-base">{lecture.title}</CardTitle>
-            {role === 'teacher' && lecture.profiles && (
-              <p className="text-xs text-gray-500 mt-0.5">{lecture.profiles.full_name}</p>
-            )}
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {isUpcoming && <Badge className="bg-green-100 text-green-700 text-xs">upcoming</Badge>}
-            {role === 'teacher' && <LectureDialog students={students} lecture={lecture} />}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <CardTitle className="text-base">{lecture.title}</CardTitle>
+              {isCompleted && (
+                <Badge className="bg-green-100 text-green-700 text-xs shrink-0">完了</Badge>
+              )}
+              {isCancelled && (
+                <Badge className="bg-gray-100 text-gray-400 text-xs shrink-0">キャンセル</Badge>
+              )}
+              {isUpcoming && !isCompleted && (
+                <Badge className="bg-green-100 text-green-700 text-xs shrink-0">upcoming</Badge>
+              )}
+            </div>
           </div>
         </div>
       </CardHeader>
@@ -253,7 +453,9 @@ function LectureCard({
             {lecture.scheduled_end_at && (
               <span className="text-gray-500">
                 {' 〜 '}
-                {new Date(lecture.scheduled_end_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(lecture.scheduled_end_at).toLocaleTimeString('ja-JP', {
+                  hour: '2-digit', minute: '2-digit',
+                })}
               </span>
             )}
           </span>
@@ -276,6 +478,29 @@ function LectureCard({
               <p className="text-xs font-semibold text-amber-700">準備する持ち物・事項</p>
             </div>
             <p className="text-sm text-amber-800 whitespace-pre-wrap">{lecture.preparation_notes}</p>
+          </div>
+        )}
+        {/* 完了した授業：先生からのレポート */}
+        {isCompleted && (
+          <div className="space-y-2 pt-1 border-t border-gray-100">
+            {lecture.teacher_comment && (
+              <div className="bg-blue-50 border border-blue-100 rounded-md p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
+                  <p className="text-xs font-semibold text-blue-700">先生からのコメント</p>
+                </div>
+                <p className="text-sm text-blue-800">{lecture.teacher_comment}</p>
+              </div>
+            )}
+            {lecture.homework && (
+              <div className="bg-amber-50 border border-amber-100 rounded-md p-3">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <BookOpen className="h-3.5 w-3.5 text-amber-600" />
+                  <p className="text-xs font-semibold text-amber-700">宿題・次回の準備</p>
+                </div>
+                <p className="text-sm text-amber-800">{lecture.homework}</p>
+              </div>
+            )}
           </div>
         )}
       </CardContent>

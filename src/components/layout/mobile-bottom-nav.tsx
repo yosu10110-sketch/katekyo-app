@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
   Users, Calendar, MessageSquare, MessageCircle,
-  LayoutDashboard, ClipboardList, BarChart3,
+  LayoutDashboard, ClipboardList, BarChart3, Receipt,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
@@ -29,6 +29,7 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: '生徒', icon: Users, roles: ['teacher'] },
   { href: '/lectures', label: '講義', icon: Calendar, roles: ['teacher'] },
+  { href: '/billing', label: '月謝', icon: Receipt, roles: ['teacher'] },
   { href: '/notice-board', label: '連絡板', icon: MessageSquare, roles: ['teacher'] },
   { href: '/chat', label: 'チャット', icon: MessageCircle, roles: ['teacher'] },
 
@@ -39,7 +40,7 @@ const navItems: NavItem[] = [
   { href: '/chat', label: 'チャット', icon: MessageCircle, roles: ['student'] },
 
   { href: '/dashboard', label: 'ホーム', icon: LayoutDashboard, roles: ['parent'] },
-  { href: '/assignments', label: '課題', icon: ClipboardList, roles: ['parent'] },
+  { href: '/billing', label: '月謝', icon: Receipt, roles: ['parent'] },
   { href: '/lectures', label: '講義', icon: Calendar, roles: ['parent'] },
   { href: '/notice-board', label: '連絡板', icon: MessageSquare, roles: ['parent'] },
   { href: '/chat', label: 'チャット', icon: MessageCircle, roles: ['parent'] },

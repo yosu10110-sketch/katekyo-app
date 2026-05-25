@@ -10,6 +10,7 @@ import {
   MessageCircle,
   LayoutDashboard,
   Users,
+  Receipt,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
@@ -49,6 +50,12 @@ const navItems: NavItem[] = [
     href: '/notice-board',
     label: '連絡板',
     icon: MessageSquare,
+    roles: ['teacher'],
+  },
+  {
+    href: '/billing',
+    label: '月謝管理',
+    icon: Receipt,
     roles: ['teacher'],
   },
   {
@@ -105,6 +112,12 @@ const navItems: NavItem[] = [
     href: '/notice-board',
     label: '連絡板',
     icon: MessageSquare,
+    roles: ['parent'],
+  },
+  {
+    href: '/billing',
+    label: '月謝確認',
+    icon: Receipt,
     roles: ['parent'],
   },
   {

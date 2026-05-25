@@ -51,6 +51,51 @@ export async function updateLecture(formData: FormData) {
   return { success: true }
 }
 
+export async function completeLecture(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const lectureId = formData.get('lecture_id') as string
+  const feeRaw = formData.get('fee') as string
+  const durationRaw = formData.get('duration_minutes') as string
+
+  const { error } = await supabase
+    .from('lectures')
+    .update({
+      status: 'completed',
+      teacher_comment: (formData.get('teacher_comment') as string) || null,
+      homework: (formData.get('homework') as string) || null,
+      fee: feeRaw ? parseInt(feeRaw) : null,
+      duration_minutes: durationRaw ? parseInt(durationRaw) : null,
+    })
+    .eq('id', lectureId)
+    .eq('teacher_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/lectures')
+  revalidatePath('/billing')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
+export async function cancelLecture(lectureId: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const { error } = await supabase
+    .from('lectures')
+    .update({ status: 'cancelled' })
+    .eq('id', lectureId)
+    .eq('teacher_id', user.id)
+
+  if (error) return { error: error.message }
+  revalidatePath('/lectures')
+  revalidatePath('/billing')
+  return { success: true }
+}
+
 export async function deleteLecture(lectureId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
