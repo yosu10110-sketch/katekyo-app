@@ -83,6 +83,7 @@ export interface NoticeBoardPost {
   title: string
   content: string
   is_visible_to_student: boolean
+  attachments: string[]
   created_at: string
   updated_at: string
   profiles?: Profile
@@ -94,6 +95,7 @@ export interface NoticeBoardReply {
   post_id: string
   author_id: string
   content: string
+  attachments: string[]
   created_at: string
   profiles?: Profile
 }
