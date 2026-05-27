@@ -86,7 +86,7 @@ export default function RelationshipsPage() {
       <div>
         <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
           <Users className="h-5 w-5 text-indigo-600" />
-          メンバー管理
+          {role === 'parent' ? 'お子さん管理' : 'メンバー管理'}
         </h2>
         <p className="text-gray-500 text-sm mt-1">
           {role === 'teacher' ? '担当生徒を追加・管理します' :
