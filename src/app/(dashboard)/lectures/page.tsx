@@ -47,6 +47,7 @@ export default async function LecturesPage({
     .select('*, profiles!lectures_student_id_fkey(full_name)')
     .order('scheduled_at', { ascending: true })
 
+  let parentChildIds: string[] = []
   if (role === 'teacher') {
     lecturesQuery = lecturesQuery.eq('teacher_id', user.id)
     if (studentFilter) lecturesQuery = lecturesQuery.eq('student_id', studentFilter)
@@ -56,8 +57,8 @@ export default async function LecturesPage({
     const { data: rel } = await supabase
       .from('parent_student_relationships')
       .select('student_id').eq('parent_id', user.id)
-    const ids = rel?.map((r) => r.student_id) ?? []
-    if (ids.length > 0) lecturesQuery = lecturesQuery.in('student_id', ids)
+    parentChildIds = rel?.map((r) => r.student_id) ?? []
+    if (parentChildIds.length > 0) lecturesQuery = lecturesQuery.in('student_id', parentChildIds)
   }
 
   const { data: lectures } = await lecturesQuery
@@ -83,6 +84,23 @@ export default async function LecturesPage({
     if (studentFilter) {
       pendingRequests = pendingRequests.filter((r) => r.student_id === studentFilter)
     }
+  }
+
+  // 保護者用：子供 + 担当教師の情報
+  let parentChildren: { studentId: string; studentName: string; teacherId: string }[] = []
+  if (role === 'parent' && parentChildIds.length > 0) {
+    const [profilesRes, teacherRelsRes] = await Promise.all([
+      supabase.from('profiles').select('id, full_name').in('id', parentChildIds),
+      supabase.from('teacher_student_relationships').select('student_id, teacher_id').in('student_id', parentChildIds),
+    ])
+    const childProfiles = profilesRes.data ?? []
+    const childTeacherRels = teacherRelsRes.data ?? []
+    parentChildren = parentChildIds.flatMap((childId) => {
+      const profile = childProfiles.find((p) => p.id === childId)
+      const teacherRel = childTeacherRels.find((t) => t.student_id === childId)
+      if (!teacherRel) return []
+      return [{ studentId: childId, studentName: profile?.full_name ?? '不明', teacherId: teacherRel.teacher_id }]
+    })
   }
 
   // 生徒用：担当教師ID + 自分の申請履歴
@@ -134,6 +152,9 @@ export default async function LecturesPage({
         {role === 'teacher' && <LectureDialog students={students} />}
         {role === 'student' && teacherId && (
           <RequestLectureDialog teacherId={teacherId} />
+        )}
+        {role === 'parent' && parentChildren.length > 0 && (
+          <RequestLectureDialog parentChildren={parentChildren} />
         )}
       </div>
 

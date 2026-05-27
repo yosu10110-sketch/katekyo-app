@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createLecture, updateLecture, deleteLecture } from '@/app/actions/lectures'
+import { createBulkLectures, updateLecture, deleteLecture } from '@/app/actions/lectures'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -30,13 +30,23 @@ export function LectureDialog({ students, lecture }: LectureDialogProps) {
   async function handleSubmit(formData: FormData) {
     setLoading(true)
     setError(null)
-    if (isEdit) formData.append('lecture_id', lecture.id)
-    const result = isEdit ? await updateLecture(formData) : await createLecture(formData)
-    setLoading(false)
-    if (result?.error) {
-      setError(result.error)
+    if (isEdit) {
+      formData.append('lecture_id', lecture.id)
+      const result = await updateLecture(formData)
+      setLoading(false)
+      if (result?.error) setError(result.error)
+      else setOpen(false)
     } else {
-      setOpen(false)
+      const studentIds = formData.getAll('student_ids') as string[]
+      if (!studentIds.length) {
+        setError('生徒を1名以上選択してください')
+        setLoading(false)
+        return
+      }
+      const result = await createBulkLectures(formData)
+      setLoading(false)
+      if (result?.error) setError(result.error)
+      else setOpen(false)
     }
   }
 
@@ -70,18 +80,20 @@ export function LectureDialog({ students, lecture }: LectureDialogProps) {
           <form action={handleSubmit} className="space-y-4 mt-2">
             {!isEdit && (
               <div className="space-y-1">
-                <Label htmlFor="student_id">対象生徒</Label>
-                <select
-                  id="student_id"
-                  name="student_id"
-                  required
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="">生徒を選択してください</option>
+                <Label>対象生徒 <span className="text-xs text-gray-400 font-normal">（複数選択可）</span></Label>
+                <div className="border border-input rounded-md p-2 space-y-1 max-h-40 overflow-y-auto">
                   {students.map((s) => (
-                    <option key={s.id} value={s.id}>{s.full_name}</option>
+                    <label key={s.id} className="flex items-center gap-2.5 px-2 py-1.5 rounded-md cursor-pointer hover:bg-gray-50">
+                      <input
+                        type="checkbox"
+                        name="student_ids"
+                        value={s.id}
+                        className="h-4 w-4 rounded border-gray-300 text-indigo-600"
+                      />
+                      <span className="text-sm text-gray-700">{s.full_name}</span>
+                    </label>
                   ))}
-                </select>
+                </div>
               </div>
             )}
 

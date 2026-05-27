@@ -210,7 +210,7 @@ export default async function DashboardPage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-500">連絡板</p>
-                  <p className="text-sm text-gray-600">保護者との連絡</p>
+                  <p className="text-sm text-gray-600">先生との連絡</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-gray-300" />
               </CardContent>

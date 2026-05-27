@@ -96,6 +96,32 @@ export async function cancelLecture(lectureId: string) {
   return { success: true }
 }
 
+export async function createBulkLectures(formData: FormData) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: '認証が必要です' }
+
+  const studentIds = formData.getAll('student_ids') as string[]
+  if (!studentIds.length) return { error: '生徒を選択してください' }
+
+  const scheduledEndAtRaw = formData.get('scheduled_end_at') as string
+  const lectures = studentIds.map((studentId) => ({
+    teacher_id: user.id,
+    student_id: studentId,
+    title: formData.get('title') as string,
+    scheduled_at: new Date(formData.get('scheduled_at') as string).toISOString(),
+    scheduled_end_at: scheduledEndAtRaw ? new Date(scheduledEndAtRaw).toISOString() : null,
+    meeting_url: (formData.get('meeting_url') as string) || null,
+    preparation_notes: (formData.get('preparation_notes') as string) || null,
+  }))
+
+  const { error } = await supabase.from('lectures').insert(lectures)
+  if (error) return { error: error.message }
+  revalidatePath('/lectures')
+  revalidatePath('/dashboard')
+  return { success: true }
+}
+
 export async function deleteLecture(lectureId: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

@@ -29,7 +29,7 @@ export async function createLectureRequest(formData: FormData) {
   }
 
   const { error } = await supabase.from('lecture_requests').insert({
-    student_id: user.id,
+    student_id: (formData.get('student_id') as string) || user.id,
     teacher_id: teacherId,
     desired_at: desiredAt,
     request_type: requestType,

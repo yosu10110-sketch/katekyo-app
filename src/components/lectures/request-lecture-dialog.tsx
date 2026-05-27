@@ -11,8 +11,15 @@ import { CalendarPlus } from 'lucide-react'
 
 type RequestType = 'datetime' | 'timerange' | 'allday'
 
-interface RequestLectureDialogProps {
+interface ParentChild {
+  studentId: string
+  studentName: string
   teacherId: string
+}
+
+interface RequestLectureDialogProps {
+  teacherId?: string
+  parentChildren?: ParentChild[]
 }
 
 const REQUEST_TYPES: { key: RequestType; label: string; desc: string }[] = [
@@ -21,24 +28,34 @@ const REQUEST_TYPES: { key: RequestType; label: string; desc: string }[] = [
   { key: 'allday', label: '終日', desc: 'この日ならいつでも' },
 ]
 
-export function RequestLectureDialog({ teacherId }: RequestLectureDialogProps) {
+export function RequestLectureDialog({ teacherId: propTeacherId, parentChildren }: RequestLectureDialogProps) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [requestType, setRequestType] = useState<RequestType>('datetime')
+  const [selectedChildIdx, setSelectedChildIdx] = useState(0)
   const [isPending, startTransition] = useTransition()
+
+  const effectiveTeacherId = parentChildren
+    ? (parentChildren[selectedChildIdx]?.teacherId ?? '')
+    : (propTeacherId ?? '')
+  const effectiveStudentId = parentChildren
+    ? parentChildren[selectedChildIdx]?.studentId
+    : null
 
   function handleClose() {
     setOpen(false)
     setError(null)
     setSuccess(false)
     setRequestType('datetime')
+    setSelectedChildIdx(0)
   }
 
   async function handleSubmit(formData: FormData) {
     startTransition(async () => {
       setError(null)
-      formData.set('teacher_id', teacherId)
+      formData.set('teacher_id', effectiveTeacherId)
+      if (effectiveStudentId) formData.set('student_id', effectiveStudentId)
       formData.set('request_type', requestType)
       const result = await createLectureRequest(formData)
       if ('error' in result) {
@@ -69,6 +86,27 @@ export function RequestLectureDialog({ teacherId }: RequestLectureDialogProps) {
             </div>
           ) : (
             <form action={handleSubmit} className="space-y-4 mt-2">
+              {/* 保護者：子供が複数の場合はセレクタ表示 */}
+              {parentChildren && parentChildren.length > 1 && (
+                <div className="space-y-1.5">
+                  <Label>申請するお子さん</Label>
+                  <select
+                    value={selectedChildIdx}
+                    onChange={(e) => setSelectedChildIdx(Number(e.target.value))}
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  >
+                    {parentChildren.map((child, idx) => (
+                      <option key={child.studentId} value={idx}>{child.studentName}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+              {parentChildren && parentChildren.length === 1 && (
+                <div className="text-sm text-gray-600 bg-gray-50 border border-gray-200 px-3 py-2 rounded-md">
+                  {parentChildren[0].studentName}さんの申請
+                </div>
+              )}
+
               {/* 申請タイプ選択 */}
               <div className="space-y-1.5">
                 <Label>申請タイプ</Label>
@@ -99,7 +137,6 @@ export function RequestLectureDialog({ teacherId }: RequestLectureDialogProps) {
                 <Input id="desired_date" name="desired_date" type="date" required />
               </div>
 
-              {/* 日時指定：時刻1つ */}
               {requestType === 'datetime' && (
                 <div className="space-y-1.5">
                   <Label htmlFor="start_time">希望時刻</Label>
@@ -107,7 +144,6 @@ export function RequestLectureDialog({ teacherId }: RequestLectureDialogProps) {
                 </div>
               )}
 
-              {/* 時間帯指定：開始〜終了 */}
               {requestType === 'timerange' && (
                 <div className="space-y-1.5">
                   <Label>希望時間帯</Label>
@@ -119,7 +155,6 @@ export function RequestLectureDialog({ teacherId }: RequestLectureDialogProps) {
                 </div>
               )}
 
-              {/* 終日：日付のみ */}
               {requestType === 'allday' && (
                 <p className="text-sm text-indigo-700 bg-indigo-50 rounded-lg px-3 py-2">
                   この日であれば時間はいつでも大丈夫、と教師に伝わります。
