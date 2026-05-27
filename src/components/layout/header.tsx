@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { usePathname } from 'next/navigation'
 import { logout } from '@/app/actions/auth'
@@ -17,20 +17,20 @@ import Link from 'next/link'
 import type { Profile } from '@/types'
 
 const pageTitles: Record<string, string> = {
-  '/dashboard': '繝繝・す繝･繝懊・繝・,
-  '/assignments': '隱ｲ鬘檎ｮ｡逅・,
-  '/lectures': '谺｡蝗櫁ｬ帷ｾｩ',
-  '/notice-board': '騾｣邨｡譚ｿ',
-  '/curriculum': '謨呎攝騾ｲ謐・,
-  '/chat': '繝√Ε繝・ヨ',
-  '/profile': '繝励Ο繝輔ぅ繝ｼ繝ｫ',
+  '/dashboard': 'ダッシュボード',
+  '/assignments': '課題管理',
+  '/lectures': '次回講義',
+  '/notice-board': '連絡板',
+  '/curriculum': '教材進捗',
+  '/chat': 'チャット',
+  '/profile': 'プロフィール',
 }
 
 function getTitle(pathname: string): string {
   for (const [key, value] of Object.entries(pageTitles)) {
     if (pathname === key || pathname.startsWith(key + '/')) return value
   }
-  return '繧ｫ繝・く繝ｧ繧ｵ繝昴・繝・
+  return 'edulink'
 }
 
 export function Header({ profile }: { profile: Profile }) {
@@ -38,7 +38,7 @@ export function Header({ profile }: { profile: Profile }) {
   const title = getTitle(pathname)
 
   const initials = profile.full_name
-    .split(/[\s縲]+/)
+    .split(/[\s　]+/)
     .map((n) => n[0])
     .join('')
     .toUpperCase()
@@ -71,7 +71,8 @@ export function Header({ profile }: { profile: Profile }) {
           <Link href="/profile">
             <DropdownMenuItem className="flex items-center gap-2 cursor-pointer">
               <UserCircle className="h-4 w-4" />
-              繝励Ο繝輔ぅ繝ｼ繝ｫ邱ｨ髮・            </DropdownMenuItem>
+              プロフィール編集
+            </DropdownMenuItem>
           </Link>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -80,7 +81,8 @@ export function Header({ profile }: { profile: Profile }) {
             variant="destructive"
           >
             <LogOut className="h-4 w-4" />
-            繝ｭ繧ｰ繧｢繧ｦ繝・          </DropdownMenuItem>
+            ログアウト
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
     </header>

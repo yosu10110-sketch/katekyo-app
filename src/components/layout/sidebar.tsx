@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -33,100 +33,102 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  // 謨吝ｸｫ
+  // 教師
   {
     href: '/dashboard',
-    label: '逕溷ｾ剃ｸ隕ｧ',
+    label: '生徒一覧',
     icon: Users,
     roles: ['teacher'],
   },
   {
     href: '/lectures',
-    label: '谺｡蝗櫁ｬ帷ｾｩ',
+    label: '次回講義',
     icon: Calendar,
     roles: ['teacher'],
   },
   {
     href: '/notice-board',
-    label: '騾｣邨｡譚ｿ',
+    label: '連絡板',
     icon: MessageSquare,
     roles: ['teacher'],
   },
   {
     href: '/billing',
-    label: '譛郁ｬ晉ｮ｡逅・,
+    label: '月謝管理',
     icon: Receipt,
     roles: ['teacher'],
   },
   {
     href: '/chat',
-    label: '繝√Ε繝・ヨ',
+    label: 'チャット',
     icon: MessageCircle,
     roles: ['teacher'],
   },
-  // 逕溷ｾ抵ｼ・鬆・岼縺ｮ縺ｿ・・  {
+  // 生徒（4項目のみ）
+  {
     href: '/assignments',
-    label: '隱ｲ鬘・,
+    label: '課題',
     icon: ClipboardList,
     roles: ['student'],
   },
   {
     href: '/lectures',
-    label: '谺｡蝗櫁ｬ帷ｾｩ',
+    label: '次回講義',
     icon: Calendar,
     roles: ['student'],
   },
   {
     href: '/chat',
-    label: '繝√Ε繝・ヨ',
+    label: 'チャット',
     icon: MessageCircle,
     roles: ['student'],
   },
   {
     href: '/notice-board',
-    label: '騾｣邨｡譚ｿ',
+    label: '連絡板',
     icon: MessageSquare,
     roles: ['student'],
   },
-  // 菫晁ｭｷ閠・  {
+  // 保護者
+  {
     href: '/dashboard',
-    label: '繝繝・す繝･繝懊・繝・,
+    label: 'ダッシュボード',
     icon: LayoutDashboard,
     roles: ['parent'],
   },
   {
     href: '/relationships',
-    label: '縺雁ｭ舌＆繧鍋ｮ｡逅・,
+    label: 'お子さん管理',
     icon: Users,
     roles: ['parent'],
   },
   {
     href: '/assignments',
-    label: '隱ｲ鬘檎｢ｺ隱・,
+    label: '課題確認',
     icon: ClipboardList,
     roles: ['parent'],
   },
   {
     href: '/lectures',
-    label: '谺｡蝗櫁ｬ帷ｾｩ',
+    label: '次回講義',
     icon: Calendar,
     roles: ['parent'],
   },
   {
     href: '/notice-board',
-    label: '騾｣邨｡譚ｿ',
+    label: '連絡板',
     icon: MessageSquare,
     roles: ['parent'],
   },
   {
     href: '/billing',
-    label: '譛郁ｬ晉｢ｺ隱・,
+    label: '月謝確認',
     icon: Receipt,
     roles: ['parent'],
   },
   {
     href: '/chat',
-    label: '繝√Ε繝・ヨ',
+    label: 'チャット',
     icon: MessageCircle,
     roles: ['parent'],
   },
@@ -147,7 +149,7 @@ export function Sidebar({ role, userId }: SidebarProps) {
         <div className="bg-indigo-600 p-1.5 rounded-lg">
           <BookOpen className="h-5 w-5 text-white" />
         </div>
-        <span className="font-bold text-gray-900 text-sm">繧ｫ繝・く繝ｧ繧ｵ繝昴・繝・/span>
+        <span className="font-bold text-gray-900 text-sm">edulink</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -183,7 +185,7 @@ export function Sidebar({ role, userId }: SidebarProps) {
             role === 'student' ? 'bg-green-100 text-green-700' :
             'bg-amber-100 text-amber-700'
           )}>
-            {role === 'teacher' ? '謨吝ｸｫ' : role === 'student' ? '逕溷ｾ・ : '菫晁ｭｷ閠・}
+            {role === 'teacher' ? '教師' : role === 'student' ? '生徒' : '保護者'}
           </span>
         </div>
       </div>
