@@ -37,10 +37,13 @@ export function ChatWindow({ roomId, initialMessages, currentUserId }: ChatWindo
             .select('full_name')
             .eq('id', newMsg.sender_id)
             .single()
-          setMessages((prev) => [
-            ...prev,
-            { ...newMsg, profiles: profileData ?? { full_name: '不明' } } as MessageWithProfile,
-          ])
+          setMessages((prev) => {
+            // 自分のメッセージの場合は楽観的メッセージを差し替え
+            const filtered = newMsg.sender_id === currentUserId
+              ? prev.filter((m) => !m.id.startsWith('opt-'))
+              : prev
+            return [...filtered, { ...newMsg, profiles: profileData ?? { full_name: '不明' } } as MessageWithProfile]
+          })
         }
       )
       .subscribe()
@@ -56,8 +59,22 @@ export function ChatWindow({ roomId, initialMessages, currentUserId }: ChatWindo
   async function handleSend() {
     const content = input.trim()
     if (!content || sending) return
-    setSending(true)
+
+    // 楽観的UI：メッセージを即座に追加
+    setMessages((prev) => [
+      ...prev,
+      {
+        id: `opt-${Date.now()}`,
+        room_id: roomId,
+        sender_id: currentUserId,
+        content,
+        created_at: new Date().toISOString(),
+        profiles: { full_name: '' },
+      } as MessageWithProfile,
+    ])
     setInput('')
+    setSending(true)
+
     const fd = new FormData()
     fd.append('room_id', roomId)
     fd.append('content', content)

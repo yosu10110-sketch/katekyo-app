@@ -19,9 +19,10 @@ function toLocalDatetimeValue(iso: string) {
 interface LectureDialogProps {
   students: Profile[]
   lecture?: Lecture
+  onDeleted?: () => void
 }
 
-export function LectureDialog({ students, lecture }: LectureDialogProps) {
+export function LectureDialog({ students, lecture, onDeleted }: LectureDialogProps) {
   const isEdit = !!lecture
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -52,10 +53,10 @@ export function LectureDialog({ students, lecture }: LectureDialogProps) {
 
   async function handleDelete() {
     if (!lecture || !confirm('この講義情報を削除しますか？')) return
-    setLoading(true)
-    await deleteLecture(lecture.id)
-    setLoading(false)
+    // 楽観的UI：ダイアログを即閉じ、カードを即削除
     setOpen(false)
+    onDeleted?.()
+    await deleteLecture(lecture.id)
   }
 
   return (

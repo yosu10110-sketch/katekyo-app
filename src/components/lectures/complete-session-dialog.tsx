@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { CheckCircle2 } from 'lucide-react'
 import type { Lecture } from '@/types'
 
-export function CompleteSessionButton({ lecture }: { lecture: Lecture }) {
+export function CompleteSessionButton({ lecture, onComplete }: { lecture: Lecture; onComplete?: () => void }) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -26,12 +26,13 @@ export function CompleteSessionButton({ lecture }: { lecture: Lecture }) {
     const formData = new FormData(e.currentTarget)
     formData.append('lecture_id', lecture.id)
     setError(null)
+    // 楽観的UI：ダイアログを即閉じ、完了状態を即反映
+    setOpen(false)
+    onComplete?.()
     startTransition(async () => {
       const result = await completeLecture(formData)
       if (result?.error) {
         setError(result.error)
-      } else {
-        setOpen(false)
       }
     })
   }

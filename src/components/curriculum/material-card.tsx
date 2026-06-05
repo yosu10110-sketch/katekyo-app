@@ -14,24 +14,36 @@ interface MaterialCardProps {
 }
 
 export function MaterialCard({ material, role, studentName }: MaterialCardProps) {
-  const units = material.curriculum_units ?? []
-  const completed = units.filter((u) => u.is_completed).length
-  const total = units.length
+  const [localUnits, setLocalUnits] = useState(material.curriculum_units ?? [])
+  const [expanded, setExpanded] = useState(false)
+  const [deleted, setDeleted] = useState(false)
+
+  const completed = localUnits.filter((u) => u.is_completed).length
+  const total = localUnits.length
   const percent = total > 0 ? Math.round((completed / total) * 100) : 0
 
-  const [expanded, setExpanded] = useState(false)
-  const [toggling, setToggling] = useState<string | null>(null)
-
   async function handleToggle(unit: CurriculumUnit) {
-    setToggling(unit.id)
-    await toggleUnit(unit.id, unit.is_completed)
-    setToggling(null)
+    // 楽観的UI：即座にチェックを反転
+    setLocalUnits((prev) =>
+      prev.map((u) => u.id === unit.id ? { ...u, is_completed: !u.is_completed } : u)
+    )
+    const result = await toggleUnit(unit.id, unit.is_completed)
+    if (result?.error) {
+      // エラー時は元に戻す
+      setLocalUnits((prev) =>
+        prev.map((u) => u.id === unit.id ? { ...u, is_completed: unit.is_completed } : u)
+      )
+    }
   }
 
   async function handleDelete() {
     if (!confirm('この教材を削除しますか？単元データも削除されます。')) return
-    await deleteMaterial(material.id)
+    setDeleted(true)
+    const result = await deleteMaterial(material.id)
+    if (result?.error) setDeleted(false)
   }
+
+  if (deleted) return null
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
@@ -81,16 +93,16 @@ export function MaterialCard({ material, role, studentName }: MaterialCardProps)
 
           {expanded && (
             <div className="px-4 py-3 space-y-1.5">
-              {units
+              {localUnits
                 .sort((a, b) => a.unit_number - b.unit_number)
                 .map((unit) => (
                   <button
                     key={unit.id}
                     onClick={() => role === 'teacher' ? handleToggle(unit) : undefined}
-                    disabled={toggling === unit.id || role !== 'teacher'}
+                    disabled={role !== 'teacher'}
                     className={`w-full flex items-center gap-3 py-1.5 px-2 rounded-md text-left transition-colors ${
                       role === 'teacher' ? 'hover:bg-gray-50 cursor-pointer' : 'cursor-default'
-                    } ${toggling === unit.id ? 'opacity-50' : ''}`}
+                    }`}
                   >
                     {unit.is_completed ? (
                       <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
