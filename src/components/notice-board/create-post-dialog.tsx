@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus, Paperclip, X, FileText } from 'lucide-react'
-import type { Profile } from '@/types'
+import type { Profile, NoticeBoardPost, NoticeBoardReply } from '@/types'
 
 function isImageUrl(url: string) {
   return /\.(jpg|jpeg|png|gif|webp|heic|avif|bmp)(\?|$)/i.test(url)
@@ -17,13 +17,28 @@ function isImageUrl(url: string) {
 
 interface Attachment { url: string; name: string }
 
+type PostWithRelations = NoticeBoardPost & {
+  profiles: Pick<Profile, 'full_name'>
+  notice_board_replies: (NoticeBoardReply & { profiles: Pick<Profile, 'full_name'> })[]
+}
+
 interface CreatePostDialogProps {
   role: string
   students: Profile[]
   defaultStudentId?: string
+  currentUserId?: string
+  currentUserName?: string
+  onCreated?: (post: PostWithRelations) => void
 }
 
-export function CreatePostDialog({ role, students, defaultStudentId }: CreatePostDialogProps) {
+export function CreatePostDialog({
+  role,
+  students,
+  defaultStudentId,
+  currentUserId,
+  currentUserName,
+  onCreated,
+}: CreatePostDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -66,10 +81,34 @@ export function CreatePostDialog({ role, students, defaultStudentId }: CreatePos
   }
 
   async function handleSubmit(formData: FormData) {
-    setLoading(true)
     setError(null)
     formData.set('is_visible_to_student', String(visible))
     formData.set('attachments', JSON.stringify(attachments.map((a) => a.url)))
+
+    // 楽観的UI：ダイアログを即閉じ、投稿をリストに即追加
+    if (onCreated && currentUserId && currentUserName) {
+      const studentId = (formData.get('student_id') as string) || defaultStudentId || ''
+      const optimisticPost: PostWithRelations = {
+        id: `opt-${Date.now()}`,
+        author_id: currentUserId,
+        student_id: studentId,
+        title: formData.get('title') as string,
+        content: formData.get('content') as string,
+        is_visible_to_student: visible,
+        attachments: attachments.map((a) => a.url),
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        profiles: { full_name: currentUserName },
+        notice_board_replies: [],
+      }
+      handleClose()
+      onCreated(optimisticPost)
+      await createPost(formData)
+      return
+    }
+
+    // フォールバック
+    setLoading(true)
     const result = await createPost(formData)
     setLoading(false)
     if (result?.error) {
@@ -139,7 +178,6 @@ export function CreatePostDialog({ role, students, defaultStudentId }: CreatePos
               />
             </div>
 
-            {/* 添付ファイル */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>添付ファイル</Label>
@@ -162,7 +200,6 @@ export function CreatePostDialog({ role, students, defaultStudentId }: CreatePos
                 />
               </div>
 
-              {/* 画像プレビュー */}
               {imageAttachments.length > 0 && (
                 <div className="grid grid-cols-3 gap-1.5">
                   {imageAttachments.map((a) => {
@@ -187,7 +224,6 @@ export function CreatePostDialog({ role, students, defaultStudentId }: CreatePos
                 </div>
               )}
 
-              {/* ファイル一覧 */}
               {fileAttachments.map((a) => {
                 const idx = attachments.indexOf(a)
                 return (

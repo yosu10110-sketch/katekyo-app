@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useOptimistic, useTransition } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { createReply, toggleVisibility, deletePost } from '@/app/actions/notice-board'
 import { Button } from '@/components/ui/button'
@@ -19,6 +19,7 @@ interface PostCardProps {
     notice_board_replies: (NoticeBoardReply & { profiles: Pick<Profile, 'full_name'> })[]
   }
   currentUserId: string
+  currentUserName: string
   role: string
 }
 
@@ -66,16 +67,25 @@ function AttachmentViewer({ urls, small = false }: { urls: string[]; small?: boo
   )
 }
 
-export function PostCard({ post, currentUserId, role }: PostCardProps) {
+export function PostCard({ post, currentUserId, currentUserName, role }: PostCardProps) {
   const [expanded, setExpanded] = useState(false)
   const [replying, setReplying] = useState(false)
   const [replyText, setReplyText] = useState('')
   const [replyAttachments, setReplyAttachments] = useState<{ url: string; name: string }[]>([])
   const [uploading, setUploading] = useState(false)
-  const [loading, setLoading] = useState(false)
   const [visible, setVisible] = useState(post.is_visible_to_student)
+  const [deleted, setDeleted] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  const [isPending, startTransition] = useTransition()
+  const [optimisticReplies, addOptimisticReply] = useOptimistic(
+    post.notice_board_replies,
+    (state, newReply: NoticeBoardReply & { profiles: Pick<Profile, 'full_name'> }) => [
+      ...state,
+      newReply,
+    ],
+  )
 
   async function handleReplyFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? [])
@@ -100,16 +110,32 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
 
   async function handleReply() {
     if (!replyText.trim() && replyAttachments.length === 0) return
-    setLoading(true)
-    const fd = new FormData()
-    fd.append('post_id', post.id)
-    fd.append('content', replyText)
-    fd.append('attachments', JSON.stringify(replyAttachments.map((a) => a.url)))
-    await createReply(fd)
+
+    const text = replyText
+    const urls = replyAttachments.map((a) => a.url)
+
+    // 楽観的UI：返信フォームを即閉じ、返信をリストに即追加
     setReplyText('')
     setReplyAttachments([])
     setReplying(false)
-    setLoading(false)
+
+    startTransition(async () => {
+      addOptimisticReply({
+        id: `opt-${Date.now()}`,
+        post_id: post.id,
+        author_id: currentUserId,
+        content: text,
+        attachments: urls,
+        created_at: new Date().toISOString(),
+        profiles: { full_name: currentUserName },
+      })
+
+      const fd = new FormData()
+      fd.append('post_id', post.id)
+      fd.append('content', text)
+      fd.append('attachments', JSON.stringify(urls))
+      await createReply(fd)
+    })
   }
 
   async function handleToggleVisibility() {
@@ -120,15 +146,21 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
 
   async function handleDelete() {
     if (!confirm('この投稿を削除しますか？')) return
-    await deletePost(post.id)
+    setDeleted(true)
+    const result = await deletePost(post.id)
+    if (result?.error) setDeleted(false)
   }
 
-  const replyCount = post.notice_board_replies?.length ?? 0
+  // 楽観的削除：確認後即座に非表示
+  if (deleted) return null
+
+  const replyCount = optimisticReplies?.length ?? 0
   const replyImageAttachments = replyAttachments.filter((a) => isImageUrl(a.url))
   const replyFileAttachments = replyAttachments.filter((a) => !isImageUrl(a.url))
+  const isOptimistic = post.id.startsWith('opt-')
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+    <div className={`bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden transition-opacity ${isOptimistic ? 'opacity-75' : ''}`}>
       {/* ヘッダー */}
       <div className="p-4">
         <div className="flex items-start justify-between gap-3">
@@ -140,7 +172,7 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
                   month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
                 })}
               </span>
-              {role === 'teacher' && (
+              {role === 'teacher' && !isOptimistic && (
                 <Badge
                   className={`text-xs cursor-pointer select-none ${visible ? 'bg-indigo-100 text-indigo-700' : 'bg-gray-100 text-gray-500'}`}
                   onClick={handleToggleVisibility}
@@ -155,7 +187,7 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
             </div>
             <h3 className="font-semibold text-gray-900">{post.title}</h3>
           </div>
-          {(role === 'teacher' || post.author_id === currentUserId) && (
+          {!isOptimistic && (role === 'teacher' || post.author_id === currentUserId) && (
             <button
               onClick={handleDelete}
               className="text-gray-300 hover:text-red-500 transition-colors shrink-0"
@@ -187,23 +219,26 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
               <>
                 <Separator />
                 <div className="space-y-3">
-                  {post.notice_board_replies.map((reply) => (
-                    <div key={reply.id} className="flex gap-2.5">
-                      <div className="w-1.5 bg-indigo-200 rounded-full shrink-0 mt-1" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                          <span className="text-xs font-medium text-gray-700">{reply.profiles?.full_name}</span>
-                          <span className="text-xs text-gray-400">
-                            {new Date(reply.created_at).toLocaleDateString('ja-JP', {
-                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                            })}
-                          </span>
+                  {optimisticReplies.map((reply) => {
+                    const isOptimisticReply = reply.id.startsWith('opt-')
+                    return (
+                      <div key={reply.id} className={`flex gap-2.5 transition-opacity ${isOptimisticReply ? 'opacity-60' : ''}`}>
+                        <div className="w-1.5 bg-indigo-200 rounded-full shrink-0 mt-1" />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span className="text-xs font-medium text-gray-700">{reply.profiles?.full_name}</span>
+                            <span className="text-xs text-gray-400">
+                              {new Date(reply.created_at).toLocaleDateString('ja-JP', {
+                                month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 whitespace-pre-wrap">{reply.content}</p>
+                          <AttachmentViewer urls={reply.attachments ?? []} small />
                         </div>
-                        <p className="text-sm text-gray-600 whitespace-pre-wrap">{reply.content}</p>
-                        <AttachmentViewer urls={reply.attachments ?? []} small />
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                 </div>
               </>
             )}
@@ -225,7 +260,6 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
                   className="text-sm"
                 />
 
-                {/* 返信の添付プレビュー */}
                 {replyImageAttachments.length > 0 && (
                   <div className="grid grid-cols-3 gap-1.5">
                     {replyImageAttachments.map((a) => {
@@ -287,11 +321,11 @@ export function PostCard({ post, currentUserId, role }: PostCardProps) {
                     type="button"
                     size="sm"
                     onClick={handleReply}
-                    disabled={loading || uploading || (!replyText.trim() && replyAttachments.length === 0)}
+                    disabled={isPending || uploading || (!replyText.trim() && replyAttachments.length === 0)}
                     className="gap-1.5 ml-auto"
                   >
                     <Send className="h-3.5 w-3.5" />
-                    {uploading ? 'アップロード中...' : loading ? '送信中...' : '返信する'}
+                    {uploading ? 'アップロード中...' : isPending ? '送信中...' : '返信する'}
                   </Button>
                 </div>
               </div>

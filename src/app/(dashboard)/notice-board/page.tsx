@@ -1,9 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { getUser, getProfile } from '@/lib/supabase/cached'
 import { redirect } from 'next/navigation'
-import { CreatePostDialog } from '@/components/notice-board/create-post-dialog'
-import { PostCard } from '@/components/notice-board/post-card'
-import { MessageSquare } from 'lucide-react'
+import { NoticeBoardClient } from '@/components/notice-board/notice-board-client'
 import type { Profile, NoticeBoardPost, NoticeBoardReply } from '@/types'
 
 type PostWithRelations = NoticeBoardPost & {
@@ -21,7 +19,6 @@ export default async function NoticeBoardPage() {
 
   const supabase = await createClient()
 
-  // 担当生徒を取得
   let studentIds: string[] = []
   let students: Profile[] = []
   let defaultStudentId: string | undefined
@@ -42,7 +39,6 @@ export default async function NoticeBoardPage() {
     defaultStudentId = studentIds[0]
   }
 
-  // 投稿一覧取得（ロール別）
   let postsQuery = supabase
     .from('notice_board_posts')
     .select(`
@@ -69,37 +65,14 @@ export default async function NoticeBoardPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {role === 'student'
-            ? '教師から公開された連絡のみ表示されます'
-            : `${posts?.length ?? 0}件の投稿`}
-        </p>
-        {(role === 'teacher' || role === 'parent') && (
-          <CreatePostDialog role={role} students={students} defaultStudentId={defaultStudentId} />
-        )}
-      </div>
-
-      {!posts || posts.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-          <p className="text-gray-500 font-medium">まだ投稿はありません</p>
-          {role !== 'student' && (
-            <p className="text-gray-400 text-sm mt-1">「新しい投稿」から連絡を送ることができます</p>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {(posts as PostWithRelations[]).map((post) => (
-            <PostCard
-              key={post.id}
-              post={post}
-              currentUserId={user.id}
-              role={role}
-            />
-          ))}
-        </div>
-      )}
+      <NoticeBoardClient
+        initialPosts={(posts ?? []) as PostWithRelations[]}
+        role={role}
+        students={students}
+        currentUserId={user.id}
+        currentUserName={profile.full_name}
+        defaultStudentId={defaultStudentId}
+      />
     </div>
   )
 }
