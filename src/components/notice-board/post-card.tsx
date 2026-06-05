@@ -128,7 +128,7 @@ export function PostCard({ post, currentUserId, currentUserName, role }: PostCar
         attachments: urls,
         created_at: new Date().toISOString(),
         profiles: { full_name: currentUserName },
-      })
+      } as unknown as NoticeBoardReply & { profiles: Pick<Profile, 'full_name'> })
 
       const fd = new FormData()
       fd.append('post_id', post.id)
