@@ -88,7 +88,7 @@ export function CreatePostDialog({
     // 楽観的UI：ダイアログを即閉じ、投稿をリストに即追加
     if (onCreated && currentUserId && currentUserName) {
       const studentId = (formData.get('student_id') as string) || defaultStudentId || ''
-      const optimisticPost: PostWithRelations = {
+      const optimisticPost = {
         id: `opt-${Date.now()}`,
         author_id: currentUserId,
         student_id: studentId,
@@ -100,7 +100,7 @@ export function CreatePostDialog({
         updated_at: new Date().toISOString(),
         profiles: { full_name: currentUserName },
         notice_board_replies: [],
-      }
+      } as unknown as PostWithRelations
       handleClose()
       onCreated(optimisticPost)
       await createPost(formData)
