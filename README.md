@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# edulink
 
-## Getting Started
+家庭教師向けの生徒管理Webアプリケーション。指導記録・課題管理・スケジュール調整など、家庭教師業務に必要な機能を一つのプラットフォームに集約しています。
 
-First, run the development server:
+🔗 公開URL: https://katekyo-app.vercel.app/login
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 課題（なぜ作ったか）
+
+家庭教師として指導する中で、紙ベースの管理に以下の課題を感じていました。
+
+- 授業時間内に記録を完結させる必要があり、丁寧な振り返りが難しい
+- 移動中や自宅で過去の指導内容を確認できず、次回の準備が非効率
+- 生徒・保護者・講師の間で指導状況の共有が分断されがち
+
+最初はNotionを用いた学習管理で運用していましたが、生徒ごとの課題管理や授業スケジュール調整に限界を感じ、現場の課題に最適化した専用のWebアプリとして開発しました。
+
+## 設計で大切にしたこと
+
+実際の利用者（生徒・講師・保護者）の体験を第一に考え、以下を重視しました。
+
+- **生徒目線**：迷わず使える、整理されたシンプルな画面構成
+- **講師目線**：課題管理やスケジュール調整などの業務を素早くこなせる導線
+- **保護者目線**：指導状況をいつでも確認できる透明性
+
+実際の指導現場で使ってもらいながらフィードバックを集め、継続的に改善しています。
+
+## 主な機能
+
+- 課題の作成・提出・フィードバック
+- 講師・生徒間のリアルタイムチャット
+- 授業スケジュール管理
+- 教材管理
+- 保護者への指導状況の共有
+
+## 技術スタック
+
+| 領域 | 技術 |
+|---|---|
+| フロントエンド | Next.js, TypeScript, React |
+| バックエンド / DB | Supabase (PostgreSQL, Auth, Realtime) |
+| スタイリング | CSS |
+| ホスティング | Vercel |
+
+## アーキテクチャ概要
+
+```
+├── src/         # アプリケーション本体（フロントエンド・API）
+├── supabase/    # DBスキーマ・マイグレーション・サーバーサイドロジック
+└── public/      # 静的アセット
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+認証・データベース・リアルタイム通信にSupabaseを採用し、フロントエンドはNext.jsで構築しています。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 開発規模
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- コード規模：約8,300行
+- 個人でのフルスタック開発（課題発見・企画・設計・実装・運用・改善まで一貫して担当）
