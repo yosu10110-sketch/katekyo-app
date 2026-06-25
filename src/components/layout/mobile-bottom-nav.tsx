@@ -3,17 +3,13 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
-  Users, Calendar, MessageSquare, MessageCircle,
+  Users, Calendar, MessageSquare,
   LayoutDashboard, ClipboardList, BarChart3, Receipt,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
 import dynamic from 'next/dynamic'
 
-const ChatNotificationBadge = dynamic(
-  () => import('@/components/chat/chat-notification-badge').then(m => m.ChatNotificationBadge),
-  { ssr: false }
-)
 const NavBadge = dynamic(
   () => import('@/components/layout/nav-badge').then(m => m.NavBadge),
   { ssr: false }
@@ -29,21 +25,21 @@ type NavItem = {
 const navItems: NavItem[] = [
   { href: '/dashboard', label: '生徒', icon: Users, roles: ['teacher'] },
   { href: '/lectures', label: '講義', icon: Calendar, roles: ['teacher'] },
+  { href: '/curriculum', label: '教材', icon: BarChart3, roles: ['teacher'] },
   { href: '/billing', label: '月謝', icon: Receipt, roles: ['teacher'] },
   { href: '/notice-board', label: '連絡板', icon: MessageSquare, roles: ['teacher'] },
-  { href: '/chat', label: 'チャット', icon: MessageCircle, roles: ['teacher'] },
 
   { href: '/dashboard', label: 'ホーム', icon: LayoutDashboard, roles: ['student'] },
   { href: '/assignments', label: '課題', icon: ClipboardList, roles: ['student'] },
   { href: '/lectures', label: '講義', icon: Calendar, roles: ['student'] },
   { href: '/curriculum', label: '教材', icon: BarChart3, roles: ['student'] },
-  { href: '/chat', label: 'チャット', icon: MessageCircle, roles: ['student'] },
+  { href: '/notice-board', label: '連絡板', icon: MessageSquare, roles: ['student'] },
 
   { href: '/dashboard', label: 'ホーム', icon: LayoutDashboard, roles: ['parent'] },
   { href: '/billing', label: '月謝', icon: Receipt, roles: ['parent'] },
   { href: '/lectures', label: '講義', icon: Calendar, roles: ['parent'] },
+  { href: '/curriculum', label: '教材', icon: BarChart3, roles: ['parent'] },
   { href: '/notice-board', label: '連絡板', icon: MessageSquare, roles: ['parent'] },
-  { href: '/chat', label: 'チャット', icon: MessageCircle, roles: ['parent'] },
 ]
 
 interface MobileBottomNavProps {
@@ -70,12 +66,7 @@ export function MobileBottomNav({ role, userId }: MobileBottomNavProps) {
           >
             <div className="relative">
               <item.icon className="h-5 w-5" />
-              {item.href === '/chat' && (
-                <span className="absolute -top-1 -right-1">
-                  <ChatNotificationBadge userId={userId} />
-                </span>
-              )}
-              {(item.href === '/assignments' || item.href === '/notice-board' || item.href === '/lectures') && (
+                {(item.href === '/assignments' || item.href === '/notice-board' || item.href === '/lectures') && (
                 <span className="absolute -top-1 -right-1">
                   <NavBadge
                     userId={userId}

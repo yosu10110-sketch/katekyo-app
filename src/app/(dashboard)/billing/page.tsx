@@ -16,15 +16,88 @@ function formatDuration(minutes: number) {
   return m > 0 ? `${h}時間${m}分` : `${h}時間`
 }
 
+type LectureRow = {
+  id: string
+  title: string
+  scheduled_at: string
+  scheduled_end_at: string | null
+  duration_minutes: number | null
+  fee: number | null
+  teacher_comment: string | null
+  homework: string | null
+  student_id: string
+  profiles?: { full_name: string } | null
+}
+
+function SessionCard({ lecture, showStudent }: { lecture: LectureRow; showStudent?: boolean }) {
+  return (
+    <Card className="border-gray-200">
+      <CardContent className="py-4 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold text-gray-900">{lecture.title}</p>
+            {showStudent && lecture.profiles?.full_name && (
+              <p className="text-xs text-indigo-600 font-medium mt-0.5">{lecture.profiles.full_name}</p>
+            )}
+            <p className="text-xs text-gray-400 mt-0.5">
+              {new Date(lecture.scheduled_at).toLocaleDateString('ja-JP', {
+                month: 'long',
+                day: 'numeric',
+                weekday: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}
+              {lecture.scheduled_end_at && (
+                <> 〜 {new Date(lecture.scheduled_end_at).toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' })}</>
+              )}
+            </p>
+          </div>
+          {lecture.fee != null && (
+            <p className="text-sm font-bold text-indigo-700 shrink-0">{formatYen(lecture.fee)}</p>
+          )}
+        </div>
+
+        {lecture.teacher_comment && (
+          <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
+              <p className="text-xs font-semibold text-blue-700">先生からのコメント</p>
+            </div>
+            <p className="text-sm text-blue-800">{lecture.teacher_comment}</p>
+          </div>
+        )}
+
+        {lecture.homework && (
+          <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+            <div className="flex items-center gap-1.5 mb-1">
+              <BookOpen className="h-3.5 w-3.5 text-amber-600" />
+              <p className="text-xs font-semibold text-amber-700">宿題・次回の準備</p>
+            </div>
+            <p className="text-sm text-amber-800">{lecture.homework}</p>
+          </div>
+        )}
+
+        {lecture.duration_minutes != null && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Clock className="h-3.5 w-3.5" />
+            <span>指導時間：{formatDuration(lecture.duration_minutes)}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
 export default async function BillingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ year?: string; month?: string }>
+  searchParams: Promise<{ year?: string; month?: string; view?: string }>
 }) {
-  const { year: yearParam, month: monthParam } = await searchParams
+  const { year: yearParam, month: monthParam, view: viewParam } = await searchParams
   const now = new Date()
   const year = yearParam ? parseInt(yearParam) : now.getFullYear()
   const month = monthParam ? parseInt(monthParam) : now.getMonth() + 1
+  const view = viewParam === 'reports' ? 'reports' : 'billing'
 
   const user = await getUser()
   if (!user) redirect('/login')
@@ -32,21 +105,187 @@ export default async function BillingPage({
   if (!profile) redirect('/login')
   const { role } = profile
 
-  if (role === 'student') redirect('/lectures')
-
   const supabase = await createClient()
+
+  // ===== 生徒ビュー =====
+  if (role === 'student') {
+    const reportYear = yearParam ? parseInt(yearParam) : now.getFullYear()
+    const startOfYear = new Date(reportYear, 0, 1)
+    const endOfYear = new Date(reportYear + 1, 0, 1)
+    const prevYear = reportYear - 1
+    const nextYear = reportYear + 1
+    const isFutureYear = nextYear > now.getFullYear()
+
+    const { data: lecturesRaw } = await supabase
+      .from('lectures')
+      .select('id, title, scheduled_at, scheduled_end_at, duration_minutes, fee, teacher_comment, homework, student_id')
+      .eq('student_id', user.id)
+      .eq('status', 'completed')
+      .gte('scheduled_at', startOfYear.toISOString())
+      .lt('scheduled_at', endOfYear.toISOString())
+      .order('scheduled_at', { ascending: false })
+
+    const lectures = (lecturesRaw ?? []) as LectureRow[]
+
+    const byMonth: Record<number, LectureRow[]> = {}
+    for (const l of lectures) {
+      const m = new Date(l.scheduled_at).getMonth() + 1
+      if (!byMonth[m]) byMonth[m] = []
+      byMonth[m].push(l)
+    }
+    const months = Object.keys(byMonth).map(Number).sort((a, b) => b - a)
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-bold text-gray-900">授業履歴</h2>
+          <p className="text-gray-500 text-sm mt-1">完了した授業の記録を確認できます</p>
+        </div>
+
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3">
+          <Link href={`/billing?year=${prevYear}`} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
+          </Link>
+          <div className="text-center">
+            <p className="font-bold text-gray-900">{reportYear}年</p>
+            {reportYear === now.getFullYear() && <p className="text-xs text-indigo-600">今年</p>}
+          </div>
+          <Link
+            href={isFutureYear ? '#' : `/billing?year=${nextYear}`}
+            className={`p-1.5 rounded-lg transition-colors ${isFutureYear ? 'opacity-30 pointer-events-none' : 'hover:bg-gray-100'}`}
+          >
+            <ChevronRight className="h-5 w-5 text-gray-600" />
+          </Link>
+        </div>
+
+        {lectures.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Receipt className="h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-gray-500 font-medium">この年の授業記録はありません</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {months.map((m) => (
+              <div key={m} className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1">
+                  {m}月（{byMonth[m].length}回）
+                </h3>
+                {byMonth[m].map((l) => (
+                  <SessionCard key={l.id} lecture={l} />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const startOfMonth = new Date(year, month - 1, 1)
   const endOfMonth = new Date(year, month, 1)
-
   const prevMonth = month === 1 ? { year: year - 1, month: 12 } : { year, month: month - 1 }
   const nextMonth = month === 12 ? { year: year + 1, month: 1 } : { year, month: month + 1 }
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1
-  const isFuture =
-    year > now.getFullYear() ||
-    (year === now.getFullYear() && month > now.getMonth() + 1)
+  const isFuture = year > now.getFullYear() || (year === now.getFullYear() && month > now.getMonth() + 1)
 
-  // ===== 教師ビュー =====
+  // ===== 指導記録ビュー (teacher / parent) =====
+  if (view === 'reports') {
+    const reportYear = yearParam ? parseInt(yearParam) : now.getFullYear()
+    const startOfYear = new Date(reportYear, 0, 1)
+    const endOfYear = new Date(reportYear + 1, 0, 1)
+    const prevYear = reportYear - 1
+    const nextYear = reportYear + 1
+    const isFutureYear = nextYear > now.getFullYear()
+
+    let reportsQuery = supabase
+      .from('lectures')
+      .select('id, title, scheduled_at, scheduled_end_at, duration_minutes, fee, teacher_comment, homework, student_id, profiles!lectures_student_id_fkey(full_name)')
+      .eq('status', 'completed')
+      .gte('scheduled_at', startOfYear.toISOString())
+      .lt('scheduled_at', endOfYear.toISOString())
+      .order('scheduled_at', { ascending: false })
+
+    if (role === 'teacher') {
+      reportsQuery = reportsQuery.eq('teacher_id', user.id)
+    } else {
+      const { data: rels } = await supabase
+        .from('parent_student_relationships')
+        .select('student_id')
+        .eq('parent_id', user.id)
+      const ids = rels?.map((r) => r.student_id) ?? []
+      if (ids.length === 0) {
+        return (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Receipt className="h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-gray-500 font-medium">お子さまの情報が登録されていません</p>
+          </div>
+        )
+      }
+      reportsQuery = reportsQuery.in('student_id', ids)
+    }
+
+    const { data: reportsRaw } = await reportsQuery
+    const reports = (reportsRaw ?? []) as unknown as LectureRow[]
+
+    const byMonth: Record<number, LectureRow[]> = {}
+    for (const l of reports) {
+      const m = new Date(l.scheduled_at).getMonth() + 1
+      if (!byMonth[m]) byMonth[m] = []
+      byMonth[m].push(l)
+    }
+    const months = Object.keys(byMonth).map(Number).sort((a, b) => b - a)
+
+    return (
+      <div className="space-y-6">
+        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+          <Link href="/billing" className="flex-1 text-center py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-white hover:text-gray-900 transition-colors">
+            月謝
+          </Link>
+          <span className="flex-1 text-center py-2 rounded-lg text-sm font-medium bg-white text-gray-900 shadow-sm">
+            指導記録
+          </span>
+        </div>
+
+        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3">
+          <Link href={`/billing?view=reports&year=${prevYear}`} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
+            <ChevronLeft className="h-5 w-5 text-gray-600" />
+          </Link>
+          <div className="text-center">
+            <p className="font-bold text-gray-900">{reportYear}年</p>
+            {reportYear === now.getFullYear() && <p className="text-xs text-indigo-600">今年</p>}
+          </div>
+          <Link
+            href={isFutureYear ? '#' : `/billing?view=reports&year=${nextYear}`}
+            className={`p-1.5 rounded-lg transition-colors ${isFutureYear ? 'opacity-30 pointer-events-none' : 'hover:bg-gray-100'}`}
+          >
+            <ChevronRight className="h-5 w-5 text-gray-600" />
+          </Link>
+        </div>
+
+        {reports.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 text-center">
+            <Receipt className="h-12 w-12 text-gray-300 mb-4" />
+            <p className="text-gray-500 font-medium">この年の指導記録はありません</p>
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {months.map((m) => (
+              <div key={m} className="space-y-3">
+                <h3 className="text-sm font-semibold text-gray-700 border-b border-gray-200 pb-1">
+                  {m}月（{byMonth[m].length}回）
+                </h3>
+                {byMonth[m].map((l) => (
+                  <SessionCard key={l.id} lecture={l} showStudent={role === 'teacher'} />
+                ))}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // ===== 教師ビュー（月謝） =====
   if (role === 'teacher') {
     const { data: lecturesRaw } = await supabase
       .from('lectures')
@@ -74,10 +313,7 @@ export default async function BillingPage({
       const sId = l.student_id
       if (!byStudent[sId]) {
         byStudent[sId] = {
-          student: (l.profiles as unknown as { id: string; full_name: string }) ?? {
-            id: sId,
-            full_name: '不明',
-          },
+          student: (l.profiles as unknown as { id: string; full_name: string }) ?? { id: sId, full_name: '不明' },
           sessions: [],
           totalFee: 0,
           totalMinutes: 0,
@@ -94,40 +330,36 @@ export default async function BillingPage({
 
     return (
       <div className="space-y-6">
+        <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+          <span className="flex-1 text-center py-2 rounded-lg text-sm font-medium bg-white text-gray-900 shadow-sm">
+            月謝
+          </span>
+          <Link href="/billing?view=reports" className="flex-1 text-center py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-white hover:text-gray-900 transition-colors">
+            指導記録
+          </Link>
+        </div>
+
         <div>
           <h2 className="text-xl font-bold text-gray-900">月謝管理</h2>
           <p className="text-gray-500 text-sm mt-1">完了した授業の指導料を確認できます</p>
         </div>
 
-        {/* 月ナビゲーション */}
         <div className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3">
-          <Link
-            href={`/billing?year=${prevMonth.year}&month=${prevMonth.month}`}
-            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-          >
+          <Link href={`/billing?year=${prevMonth.year}&month=${prevMonth.month}`} className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors">
             <ChevronLeft className="h-5 w-5 text-gray-600" />
           </Link>
           <div className="text-center">
-            <p className="font-bold text-gray-900">
-              {year}年{month}月
-            </p>
+            <p className="font-bold text-gray-900">{year}年{month}月</p>
             {isCurrentMonth && <p className="text-xs text-indigo-600">今月</p>}
           </div>
           <Link
-            href={
-              isFuture
-                ? '#'
-                : `/billing?year=${nextMonth.year}&month=${nextMonth.month}`
-            }
-            className={`p-1.5 rounded-lg transition-colors ${
-              isFuture ? 'opacity-30 pointer-events-none' : 'hover:bg-gray-100'
-            }`}
+            href={isFuture ? '#' : `/billing?year=${nextMonth.year}&month=${nextMonth.month}`}
+            className={`p-1.5 rounded-lg transition-colors ${isFuture ? 'opacity-30 pointer-events-none' : 'hover:bg-gray-100'}`}
           >
             <ChevronRight className="h-5 w-5 text-gray-600" />
           </Link>
         </div>
 
-        {/* 月合計サマリー */}
         <div className="grid grid-cols-2 gap-4">
           <Card className="bg-indigo-50 border-indigo-200">
             <CardContent className="py-4 px-5">
@@ -139,8 +371,7 @@ export default async function BillingPage({
             <CardContent className="py-4 px-5">
               <p className="text-xs font-medium text-green-600 mb-1">完了授業数 / 合計時間</p>
               <p className="text-xl font-bold text-green-900">
-                {lectures.length}
-                <span className="text-sm font-normal text-green-600 ml-1">回</span>
+                {lectures.length}<span className="text-sm font-normal text-green-600 ml-1">回</span>
               </p>
               <p className="text-xs text-green-700 mt-0.5">
                 {grandTotalMinutes > 0 ? formatDuration(grandTotalMinutes) : '—'}
@@ -149,14 +380,11 @@ export default async function BillingPage({
           </Card>
         </div>
 
-        {/* 生徒別内訳 */}
         {studentSummaries.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <Receipt className="h-12 w-12 text-gray-300 mb-4" />
             <p className="text-gray-500 font-medium">この月の完了した授業はありません</p>
-            <p className="text-gray-400 text-sm mt-1">
-              授業完了後、指導料を記録すると集計されます
-            </p>
+            <p className="text-gray-400 text-sm mt-1">授業完了後、指導料を記録すると集計されます</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -174,8 +402,7 @@ export default async function BillingPage({
                     <div className="text-right">
                       <p className="text-lg font-bold text-indigo-700">{formatYen(totalFee)}</p>
                       <p className="text-xs text-gray-500">
-                        {sessions.length}回
-                        {totalMinutes > 0 ? ` · ${formatDuration(totalMinutes)}` : ''}
+                        {sessions.length}回{totalMinutes > 0 ? ` · ${formatDuration(totalMinutes)}` : ''}
                       </p>
                     </div>
                   </div>
@@ -183,21 +410,12 @@ export default async function BillingPage({
                 <CardContent className="pt-3 pb-2">
                   <div className="space-y-2">
                     {sessions.map((s) => (
-                      <div
-                        key={s.id}
-                        className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0"
-                      >
+                      <div key={s.id} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium text-gray-800">{s.title}</p>
                           <p className="text-xs text-gray-400">
-                            {new Date(s.scheduled_at).toLocaleDateString('ja-JP', {
-                              month: 'long',
-                              day: 'numeric',
-                              weekday: 'short',
-                            })}
-                            {s.duration_minutes
-                              ? ` · ${formatDuration(s.duration_minutes)}`
-                              : ''}
+                            {new Date(s.scheduled_at).toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' })}
+                            {s.duration_minutes ? ` · ${formatDuration(s.duration_minutes)}` : ''}
                           </p>
                         </div>
                         <p className="text-sm font-semibold text-gray-700 shrink-0 ml-3">
@@ -215,7 +433,7 @@ export default async function BillingPage({
     )
   }
 
-  // ===== 保護者ビュー =====
+  // ===== 保護者ビュー（月謝） =====
   const { data: rels } = await supabase
     .from('parent_student_relationships')
     .select('student_id')
@@ -241,57 +459,46 @@ export default async function BillingPage({
     .lt('scheduled_at', endOfMonth.toISOString())
     .order('scheduled_at', { ascending: false })
 
-  const lectures = lecturesRaw ?? []
+  const lectures = (lecturesRaw ?? []) as LectureRow[]
   const totalFee = lectures.reduce((sum, l) => sum + (l.fee ?? 0), 0)
   const totalMinutes = lectures.reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0)
 
   return (
     <div className="space-y-6">
-      {/* 月ナビゲーション */}
+      <div className="flex bg-gray-100 rounded-xl p-1 gap-1">
+        <span className="flex-1 text-center py-2 rounded-lg text-sm font-medium bg-white text-gray-900 shadow-sm">
+          月謝
+        </span>
+        <Link href="/billing?view=reports" className="flex-1 text-center py-2 rounded-lg text-sm font-medium text-gray-500 hover:bg-white hover:text-gray-900 transition-colors">
+          指導記録
+        </Link>
+      </div>
+
       <div className="flex items-center justify-between">
-        <Link
-          href={`/billing?year=${prevMonth.year}&month=${prevMonth.month}`}
-          className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-        >
+        <Link href={`/billing?year=${prevMonth.year}&month=${prevMonth.month}`} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
           <ChevronLeft className="h-5 w-5 text-gray-600" />
         </Link>
         <div className="text-center">
-          <p className="font-bold text-gray-900">
-            {year}年{month}月
-          </p>
-          {isCurrentMonth && (
-            <span className="text-xs text-indigo-600">今月</span>
-          )}
+          <p className="font-bold text-gray-900">{year}年{month}月</p>
+          {isCurrentMonth && <span className="text-xs text-indigo-600">今月</span>}
         </div>
         <Link
-          href={
-            isFuture
-              ? '#'
-              : `/billing?year=${nextMonth.year}&month=${nextMonth.month}`
-          }
-          className={`p-2 rounded-lg transition-colors ${
-            isFuture ? 'opacity-30 pointer-events-none' : 'hover:bg-gray-100'
-          }`}
+          href={isFuture ? '#' : `/billing?year=${nextMonth.year}&month=${nextMonth.month}`}
+          className={`p-2 rounded-lg transition-colors ${isFuture ? 'opacity-30 pointer-events-none' : 'hover:bg-gray-100'}`}
         >
           <ChevronRight className="h-5 w-5 text-gray-600" />
         </Link>
       </div>
 
-      {/* 請求額バナー */}
       <div className="bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-2xl p-6 text-white shadow-lg">
-        <p className="text-indigo-200 text-sm font-medium mb-1">
-          {year}年{month}月 確定済み請求額
-        </p>
+        <p className="text-indigo-200 text-sm font-medium mb-1">{year}年{month}月 確定済み請求額</p>
         <p className="text-4xl font-bold">{formatYen(totalFee)}</p>
         <div className="flex items-center gap-4 mt-3 text-indigo-200 text-sm">
           <span>{lectures.length}回の授業</span>
-          {totalMinutes > 0 && (
-            <span>合計 {formatDuration(totalMinutes)}</span>
-          )}
+          {totalMinutes > 0 && <span>合計 {formatDuration(totalMinutes)}</span>}
         </div>
       </div>
 
-      {/* 授業タイムライン */}
       {lectures.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <Receipt className="h-10 w-10 text-gray-300 mb-3" />
@@ -301,82 +508,12 @@ export default async function BillingPage({
         <div className="space-y-4">
           <h3 className="text-sm font-semibold text-gray-700">授業レポート</h3>
           <div className="relative">
-            {/* タイムライン縦線 */}
             <div className="absolute left-4 top-2 bottom-2 w-px bg-indigo-200" />
-
             <div className="space-y-4">
               {lectures.map((lecture) => (
                 <div key={lecture.id} className="pl-10 relative">
-                  {/* ドット */}
                   <div className="absolute left-[11px] top-4 h-2.5 w-2.5 rounded-full bg-indigo-500 border-2 border-white shadow-sm" />
-
-                  <Card className="border-gray-200">
-                    <CardContent className="py-4 space-y-3">
-                      {/* ヘッダー */}
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-gray-900">{lecture.title}</p>
-                          <p className="text-xs text-gray-400 mt-0.5">
-                            {new Date(lecture.scheduled_at).toLocaleDateString('ja-JP', {
-                              month: 'long',
-                              day: 'numeric',
-                              weekday: 'short',
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
-                            {lecture.scheduled_end_at && (
-                              <>
-                                {' 〜 '}
-                                {new Date(lecture.scheduled_end_at).toLocaleTimeString('ja-JP', {
-                                  hour: '2-digit',
-                                  minute: '2-digit',
-                                })}
-                              </>
-                            )}
-                          </p>
-                        </div>
-                        {lecture.fee != null && (
-                          <p className="text-sm font-bold text-indigo-700 shrink-0">
-                            {formatYen(lecture.fee)}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* 先生コメント */}
-                      {lecture.teacher_comment && (
-                        <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <MessageSquare className="h-3.5 w-3.5 text-blue-500" />
-                            <p className="text-xs font-semibold text-blue-700">
-                              先生からのコメント
-                            </p>
-                          </div>
-                          <p className="text-sm text-blue-800">{lecture.teacher_comment}</p>
-                        </div>
-                      )}
-
-                      {/* 宿題 */}
-                      {lecture.homework && (
-                        <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
-                          <div className="flex items-center gap-1.5 mb-1">
-                            <BookOpen className="h-3.5 w-3.5 text-amber-600" />
-                            <p className="text-xs font-semibold text-amber-700">
-                              宿題・次回の準備
-                            </p>
-                          </div>
-                          <p className="text-sm text-amber-800">{lecture.homework}</p>
-                        </div>
-                      )}
-
-                      {/* 指導時間 */}
-                      {lecture.duration_minutes != null && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-500">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>指導時間：{formatDuration(lecture.duration_minutes)}</span>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <SessionCard lecture={lecture} />
                 </div>
               ))}
             </div>

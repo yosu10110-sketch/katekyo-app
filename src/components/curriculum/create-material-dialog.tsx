@@ -5,7 +5,6 @@ import { createMaterial } from '@/app/actions/curriculum'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus } from 'lucide-react'
 import type { Profile } from '@/types'
@@ -54,31 +53,13 @@ export function CreateMaterialDialog({ students }: { students: Profile[] }) {
                 ))}
               </select>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1">
-                <Label htmlFor="subject">科目</Label>
-                <Input id="subject" name="subject" placeholder="例：数学" required />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="total_units">単元数</Label>
-                <Input id="total_units" name="total_units" type="number" min="1" max="100" defaultValue="10" required />
-              </div>
+            <div className="space-y-1">
+              <Label htmlFor="subject">科目</Label>
+              <Input id="subject" name="subject" placeholder="例：数学" required />
             </div>
             <div className="space-y-1">
               <Label htmlFor="title">教材名</Label>
               <Input id="title" name="title" placeholder="例：中学数学 教科書 3年" required />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="unit_titles">
-                単元名（1行1単元）
-                <span className="text-gray-400 font-normal ml-1 text-xs">※単元数分だけ使われます</span>
-              </Label>
-              <Textarea
-                id="unit_titles"
-                name="unit_titles"
-                placeholder={"第1章 式と計算\n第2章 平方根\n第3章 二次方程式\n..."}
-                rows={5}
-              />
             </div>
             {error && (
               <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-md p-2">{error}</p>

@@ -21,12 +21,13 @@ const pageTitles: Record<string, string> = {
   '/assignments': '課題管理',
   '/lectures': '次回講義',
   '/notice-board': '連絡板',
-  '/curriculum': '教材進捗',
-  '/chat': 'チャット',
+  '/curriculum': '教材',
+  '/billing': '月謝管理',
   '/profile': 'プロフィール',
 }
 
-function getTitle(pathname: string): string {
+function getTitle(pathname: string, role?: string): string {
+  if (role === 'student' && (pathname === '/billing' || pathname.startsWith('/billing/'))) return '授業履歴'
   for (const [key, value] of Object.entries(pageTitles)) {
     if (pathname === key || pathname.startsWith(key + '/')) return value
   }
@@ -35,7 +36,7 @@ function getTitle(pathname: string): string {
 
 export function Header({ profile }: { profile: Profile }) {
   const pathname = usePathname()
-  const title = getTitle(pathname)
+  const title = getTitle(pathname, profile.role)
 
   const initials = profile.full_name
     .split(/[\s　]+/)

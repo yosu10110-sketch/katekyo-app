@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { usePathname } from 'next/navigation'
 
-type Feature = 'assignments' | 'notice-board' | 'lectures' | 'chat'
+type Feature = 'assignments' | 'notice-board' | 'lectures'
 
 interface NavBadgeProps {
   userId: string

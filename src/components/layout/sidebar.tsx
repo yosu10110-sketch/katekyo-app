@@ -7,19 +7,15 @@ import {
   ClipboardList,
   Calendar,
   MessageSquare,
-  MessageCircle,
   LayoutDashboard,
   Users,
   Receipt,
+  BarChart3,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { UserRole } from '@/types'
 import dynamic from 'next/dynamic'
 
-const ChatNotificationBadge = dynamic(
-  () => import('@/components/chat/chat-notification-badge').then(m => m.ChatNotificationBadge),
-  { ssr: false }
-)
 const NavBadge = dynamic(
   () => import('@/components/layout/nav-badge').then(m => m.NavBadge),
   { ssr: false }
@@ -59,12 +55,12 @@ const navItems: NavItem[] = [
     roles: ['teacher'],
   },
   {
-    href: '/chat',
-    label: 'チャット',
-    icon: MessageCircle,
+    href: '/curriculum',
+    label: '教材管理',
+    icon: BarChart3,
     roles: ['teacher'],
   },
-  // 生徒（4項目のみ）
+  // 生徒
   {
     href: '/assignments',
     label: '課題',
@@ -78,15 +74,21 @@ const navItems: NavItem[] = [
     roles: ['student'],
   },
   {
-    href: '/chat',
-    label: 'チャット',
-    icon: MessageCircle,
-    roles: ['student'],
-  },
-  {
     href: '/notice-board',
     label: '連絡板',
     icon: MessageSquare,
+    roles: ['student'],
+  },
+  {
+    href: '/curriculum',
+    label: '教材',
+    icon: BarChart3,
+    roles: ['student'],
+  },
+  {
+    href: '/billing',
+    label: '授業履歴',
+    icon: Receipt,
     roles: ['student'],
   },
   // 保護者
@@ -127,9 +129,9 @@ const navItems: NavItem[] = [
     roles: ['parent'],
   },
   {
-    href: '/chat',
-    label: 'チャット',
-    icon: MessageCircle,
+    href: '/curriculum',
+    label: '教材確認',
+    icon: BarChart3,
     roles: ['parent'],
   },
 ]
@@ -168,7 +170,6 @@ export function Sidebar({ role, userId }: SidebarProps) {
             >
               <item.icon className={cn('h-4 w-4 shrink-0', isActive ? 'text-indigo-600' : 'text-gray-400')} />
               {item.label}
-              {item.href === '/chat' && <ChatNotificationBadge userId={userId} />}
               {item.href === '/assignments' && <NavBadge userId={userId} role={role} feature="assignments" />}
               {item.href === '/notice-board' && <NavBadge userId={userId} role={role} feature="notice-board" />}
               {item.href === '/lectures' && <NavBadge userId={userId} role={role} feature="lectures" />}

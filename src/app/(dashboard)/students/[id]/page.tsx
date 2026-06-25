@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
-  ClipboardList, Calendar, MessageCircle, BarChart3,
+  ClipboardList, Calendar, BarChart3,
   MessageSquare, ChevronRight, ChevronLeft, Clock, CheckCircle2, Circle,
 } from 'lucide-react'
 import type { Profile } from '@/types'
@@ -142,8 +142,7 @@ export default async function StudentHubPage({ params }: { params: Promise<{ id:
         {[
           { href: `/assignments?student=${studentId}`, icon: ClipboardList, label: '課題管理', color: 'bg-indigo-50 text-indigo-600', desc: `未提出${pendingCount}件 / 採点待ち${submittedCount}件` },
           { href: `/lectures?student=${studentId}`, icon: Calendar, label: '次回講義', color: 'bg-green-50 text-green-600', desc: nextLecture ? new Date(nextLecture.scheduled_at).toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' }) : '予定なし' },
-          { href: `/chat?student=${studentId}`, icon: MessageCircle, label: 'チャット', color: 'bg-blue-50 text-blue-600', desc: 'メッセージを送る' },
-          { href: `/curriculum?student=${studentId}`, icon: BarChart3, label: '教材進捗', color: 'bg-purple-50 text-purple-600', desc: 'カリキュラム管理' },
+          { href: `/curriculum?student=${studentId}`, icon: BarChart3, label: '教材', color: 'bg-purple-50 text-purple-600', desc: 'テキストビューア' },
           { href: `/notice-board?student=${studentId}`, icon: MessageSquare, label: '連絡板', color: 'bg-amber-50 text-amber-600', desc: '保護者への連絡' },
         ].map(({ href, icon: Icon, label, color, desc }) => (
           <Link key={href} href={href}>

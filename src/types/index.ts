@@ -1,6 +1,5 @@
 export type UserRole = 'teacher' | 'student' | 'parent'
 export type AssignmentStatus = 'pending' | 'submitted' | 'reviewed'
-export type ChatRoomType = 'teacher_student' | 'teacher_parent'
 export type LectureStatus = 'scheduled' | 'completed' | 'cancelled'
 
 export interface Profile {
@@ -107,6 +106,8 @@ export interface CurriculumMaterial {
   subject: string
   title: string
   total_units: number
+  images: string[]
+  current_page: number
   created_at: string
   curriculum_units?: CurriculumUnit[]
 }
@@ -121,20 +122,3 @@ export interface CurriculumUnit {
   notes: string | null
 }
 
-export interface ChatRoom {
-  id: string
-  room_type: ChatRoomType
-  teacher_id: string
-  student_id: string | null
-  parent_id: string | null
-  created_at: string
-}
-
-export interface ChatMessage {
-  id: string
-  room_id: string
-  sender_id: string
-  content: string
-  created_at: string
-  profiles?: Profile
-}
