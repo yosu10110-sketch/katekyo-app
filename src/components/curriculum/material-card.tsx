@@ -81,6 +81,7 @@ export function MaterialCard({ material, role, studentName }: MaterialCardProps)
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <Badge variant="outline" className="text-xs">{material.subject}</Badge>
+              {material.grade && <Badge variant="outline" className="text-xs text-indigo-600 border-indigo-200">{material.grade}</Badge>}
               {studentName && <span className="text-xs text-gray-400">{studentName}</span>}
             </div>
             <h3 className="font-semibold text-gray-900">{material.title}</h3>

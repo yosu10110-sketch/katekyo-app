@@ -105,6 +105,7 @@ export interface CurriculumMaterial {
   student_id: string
   subject: string
   title: string
+  grade: string | null
   total_units: number
   images: string[]
   current_page: number

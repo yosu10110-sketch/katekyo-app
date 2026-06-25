@@ -8,6 +8,8 @@ export async function createMaterial(formData: FormData) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: '認証が必要です' }
 
+  const grade = formData.get('grade') as string | null
+
   const { error } = await supabase
     .from('curriculum_materials')
     .insert({
@@ -15,6 +17,7 @@ export async function createMaterial(formData: FormData) {
       student_id: formData.get('student_id') as string,
       subject: formData.get('subject') as string,
       title: formData.get('title') as string,
+      grade: grade || null,
       total_units: 0,
     })
 

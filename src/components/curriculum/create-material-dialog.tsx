@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Plus } from 'lucide-react'
 import type { Profile } from '@/types'
+import { GRADES } from '@/types'
 
 export function CreateMaterialDialog({ students }: { students: Profile[] }) {
   const [open, setOpen] = useState(false)
@@ -53,9 +54,24 @@ export function CreateMaterialDialog({ students }: { students: Profile[] }) {
                 ))}
               </select>
             </div>
-            <div className="space-y-1">
-              <Label htmlFor="subject">科目</Label>
-              <Input id="subject" name="subject" placeholder="例：数学" required />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Label htmlFor="subject">科目</Label>
+                <Input id="subject" name="subject" placeholder="例：数学" required />
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="grade">学年</Label>
+                <select
+                  id="grade"
+                  name="grade"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  <option value="">未選択</option>
+                  {GRADES.map((g) => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="space-y-1">
               <Label htmlFor="title">教材名</Label>
